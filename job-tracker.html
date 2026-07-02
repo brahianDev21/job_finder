@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Tracker — Brahian Toro Valencia</title>
+  <style>
+    :root {
+      --navy: #0f2240;
+      --accent: #2563eb;
+      --text: #1a1a2e;
+      --muted: #4b5563;
+      --rule: #e2e8f0;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --green: #16a34a;
+      --green-bg: #dcfce7;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+      --yellow: #d97706;
+      --yellow-bg: #fef3c7;
+      --tag-bg: #eff6ff;
+      --tag-text: #1d4ed8;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    .header { background: var(--navy); padding: 20px 24px 0; }
+    .header-top { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-bottom: 0; }
+    .header h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+    /* ── STATS ── */
+    .stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .stat { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 14px; text-align: center; min-width: 70px; }
+    .stat .num { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .stat .lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat.s-applied .num { color: #4ade80; }
+    .stat.s-skip .num { color: #f87171; }
+    .stat.s-pending .num { color: #93c5fd; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 16px; }
+    .tab { padding: 10px 18px; font-size: 13px; font-weight: 500; color: #94a3b8; cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; white-space: nowrap; }
+    .tab:hover { color: #cbd5e1; }
+    .tab.active { color: #fff; border-bottom-color: var(--accent); }
+    .tab .count { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 1px 7px; font-size: 11px; margin-left: 5px; }
+    .tab.active .count { background: var(--accent); }
+
+    /* ── CONTROLS ── */
+    .controls { padding: 16px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--bg); border-bottom: 1px solid var(--rule); }
+    .search { flex: 1; min-width: 220px; max-width: 400px; position: relative; }
+    .search input { width: 100%; padding: 8px 12px 8px 36px; border: 1px solid var(--rule); border-radius: 8px; font-size: 13px; background: var(--card); outline: none; color: var(--text); }
+    .search input:focus { border-color: var(--accent); }
+    .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: .45; pointer-events: none; }
+    .sort-label { font-size: 12px; color: var(--muted); }
+    .sort-btn { padding: 7px 12px; border: 1px solid var(--rule); border-radius: 8px; font-size: 12px; background: var(--card); cursor: pointer; color: var(--muted); }
+    .sort-btn.active { border-color: var(--accent); color: var(--accent); background: var(--tag-bg); }
+    .legend { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 11px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+
+    /* ── GRID ── */
+    .grid { padding: 20px 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+    .empty { padding: 60px 24px; text-align: center; color: var(--muted); font-size: 14px; }
+
+    /* ── CARD ── */
+    .card { background: var(--card); border-radius: 12px; border: 2px solid transparent; padding: 16px; transition: border-color .15s, box-shadow .15s; position: relative; display: flex; flex-direction: column; gap: 10px; }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .card.applied { border-color: var(--green); background: #fafffe; }
+    .card.skip { border-color: #e5e7eb; background: #fafafa; opacity: .6; }
+
+    .skipped-divider { grid-column: 1 / -1; padding: 14px 0 6px; margin-top: 8px; border-top: 2px dashed #e5e7eb; }
+    .skipped-divider span { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--bg); padding: 2px 12px; border-radius: 20px; }
+
+    .card-top { display: flex; align-items: flex-start; gap: 10px; }
+    .status-btn { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--rule); background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all .15s; margin-top: 1px; }
+    .status-btn:hover { border-color: var(--accent); }
+    .card.applied .status-btn { background: var(--green); border-color: var(--green); }
+    .card.skip .status-btn { background: #e5e7eb; border-color: #e5e7eb; }
+
+    .skip-btn { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid transparent; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); transition: all .15s; margin-top: 2px; }
+    .skip-btn:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+    .card.skip .skip-btn { color: var(--muted); }
+    .card.skip .skip-btn:hover { color: var(--text); border-color: var(--rule); background: var(--bg); }
+
+    .card-title { flex: 1; }
+    .card-title h3 { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; }
+    .card.applied h3 { color: var(--green); }
+    .card.skip h3 { color: var(--muted); }
+    .company { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 5px; }
+    .badge { font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .badge-remote { background: #d1fae5; color: #065f46; }
+    .badge-hybrid { background: #dbeafe; color: #1e40af; }
+    .badge-local  { background: #fed7aa; color: #92400e; }
+    .badge-platform { background: #f1f5f9; color: #475569; }
+    .badge-salary { background: #fef3c7; color: #92400e; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag { font-size: 10px; background: var(--tag-bg); color: var(--tag-text); border-radius: 4px; padding: 1px 6px; font-weight: 500; }
+
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .posted { font-size: 10.5px; color: #94a3b8; }
+    .view-btn { padding: 6px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background .15s; }
+    .view-btn:hover { background: #1d4ed8; }
+    .card.skip .view-btn { background: #9ca3af; }
+    .footer-btns { display: flex; gap: 6px; align-items: center; }
+    .assist-btn { padding: 6px 10px; background: var(--tag-bg); color: var(--accent); border: 1px solid #bfdbfe; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .assist-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .assist-btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
+
+    /* ── WARNING TOOLTIP ── */
+    .warn-icon { cursor: help; position: relative; display: inline-block; margin-right: 1px; }
+    .warn-tooltip { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; font-size: 11px; font-weight: 400; line-height: 1.3; padding: 5px 10px; border-radius: 6px; white-space: nowrap; z-index: 20; pointer-events: none; opacity: 0; transition: opacity .15s; }
+    .warn-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #1a1a2e; }
+    .warn-icon:hover .warn-tooltip { opacity: 1; }
+
+    /* ── TOP PICK TOOLTIP ── */
+    .top-icon { cursor: help; position: relative; display: inline-block; margin-right: 1px; }
+    .top-tooltip { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: #b45309; color: #fff; font-size: 11px; font-weight: 400; line-height: 1.3; padding: 5px 10px; border-radius: 6px; white-space: nowrap; z-index: 20; pointer-events: none; opacity: 0; transition: opacity .15s; }
+    .top-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #b45309; }
+    .top-icon:hover .top-tooltip { opacity: 1; }
+
+    /* ── RECURSOS LOCALES ── */
+    .recursos-bar { padding: 8px 24px; background: var(--bg); border-bottom: 1px solid var(--rule); }
+    .recursos-toggle { padding: 7px 14px; border: 1px solid var(--rule); border-radius: 8px; font-size: 12px; background: var(--card); cursor: pointer; color: var(--accent); font-weight: 500; }
+    .recursos-toggle:hover { background: var(--tag-bg); }
+    .recursos-section { padding: 20px 24px; background: var(--bg); border-bottom: 2px solid var(--rule); }
+    .recursos-section > h2 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+    .recursos-section h3 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; margin-top: 20px; }
+    .recursos-section h3:first-of-type { margin-top: 0; }
+    .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+    .rec-card { background: var(--card); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--rule); }
+    .rec-card .rec-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .rec-card .rec-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .rec-card .rec-link a { font-size: 11.5px; color: var(--accent); text-decoration: none; }
+    .rec-card .rec-link a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; padding: 12px; }
+      .controls { padding: 12px; }
+      .stats { gap: 6px; }
+      .stat { min-width: 60px; padding: 5px 10px; }
+      .rec-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Job Tracker</h1>
+      <div class="sub">Brahian Toro Valencia · Click the circle on each card to mark as Applied or Skip</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Total</div></div>
+      <div class="stat s-applied"><div class="num" id="stat-applied">0</div><div class="lbl">Applied</div></div>
+      <div class="stat s-skip"><div class="num" id="stat-skip">0</div><div class="lbl">Skipped</div></div>
+      <div class="stat s-pending"><div class="num" id="stat-pending">0</div><div class="lbl">Pending</div></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-filter="all">All <span class="count" id="tc-all">0</span></div>
+    <div class="tab" data-filter="local">Local <span class="count" id="tc-local">0</span></div>
+    <div class="tab" data-filter="hybrid">Hybrid <span class="count" id="tc-hybrid">0</span></div>
+    <div class="tab" data-filter="remote">Remote <span class="count" id="tc-remote">0</span></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#64748b" stroke-width="2"/><path d="M13.5 13.5L17 17" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>
+    <input type="text" id="search" placeholder="Filter by title, company, or tag…" oninput="render()">
+  </div>
+  <span class="sort-label">Show:</span>
+  <button class="sort-btn active" data-show="pending" onclick="toggleShow('pending')">Pending</button>
+  <button class="sort-btn" id="sort-applied" data-show="applied" onclick="toggleShowApplied()" style="color:var(--green)">Applied</button>
+  <button class="sort-btn" id="sort-skipped" data-show="skipped" onclick="toggleShowSkipped()" style="color:var(--red)">Skipped</button>
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#16a34a"></span>Applied</span>
+    <span><span class="legend-dot" style="background:#9ca3af"></span>Skip</span>
+    <span><span class="legend-dot" style="background:#e2e8f0;border:1px solid #cbd5e1"></span>Pending</span>
+  </div>
+</div>
+
+<div class="recursos-bar">
+  <button class="recursos-toggle" id="recursos-btn" onclick="toggleRecursos()">Recursos Locales ▼</button>
+</div>
+
+<div class="recursos-section" id="recursos-section" style="display:none">
+  <h2>Recursos Locales — Oriente Antioqueño</h2>
+
+  <h3>Grupos de Facebook y Comunidades</h3>
+  <div class="rec-grid">
+    <div class="rec-card">
+      <div class="rec-name">Link Empleo Rionegro y Oriente Antioqueño</div>
+      <div class="rec-meta">Vacantes directas del Oriente, soporte TI local</div>
+      <div class="rec-link"><a href="https://www.facebook.com/linkempleo.rionegro" target="_blank" rel="noopener">facebook.com/linkempleo.rionegro →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Link Empleo Medellín</div>
+      <div class="rec-meta">Puestos híbridos de empresas con sede en Medellín</div>
+      <div class="rec-link"><a href="https://www.facebook.com/groups/1983942258556997" target="_blank" rel="noopener">facebook.com/groups/1983942258556997 →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Grupo para Profesionales (Link Empleo)</div>
+      <div class="rec-meta">Solo vacantes técnicas/profesionales — menos ruido</div>
+      <div class="rec-link"><a href="https://www.facebook.com/groups/1770107569913388" target="_blank" rel="noopener">facebook.com/groups/1770107569913388 →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Empleos Rionegro</div>
+      <div class="rec-meta">Vacantes cabecera municipal, San Antonio de Pereira y Llanogrande</div>
+      <div class="rec-link"><a href="https://www.facebook.com/search/groups/?q=Empleos%20Rionegro" target="_blank" rel="noopener">Buscar en Facebook →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Ofertas de Trabajo Oriente Antioqueño</div>
+      <div class="rec-meta">TI para Guarne, Marinilla y El Carmen de Viboral</div>
+      <div class="rec-link"><a href="https://www.facebook.com/search/groups/?q=Ofertas%20Trabajo%20Oriente%20Antioqueño" target="_blank" rel="noopener">Buscar en Facebook →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Trabajos Antioquia</div>
+      <div class="rec-meta">Departamental, flujo alto — incluye software en altiplano</div>
+      <div class="rec-link"><a href="https://www.facebook.com/search/groups/?q=Trabajos%20Antioquia" target="_blank" rel="noopener">Buscar en Facebook →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Empleos Medellín y Antioquia</div>
+      <div class="rec-meta">Comunidad amplia, muchas publicaciones diarias</div>
+      <div class="rec-link"><a href="https://www.facebook.com/search/groups/?q=Empleos%20Medellín%20y%20Antioquia" target="_blank" rel="noopener">Buscar en Facebook →</a></div>
+    </div>
+  </div>
+
+  <h3>Empresas para Postulación Espontánea (envío directo de HV)</h3>
+  <div class="rec-grid">
+    <div class="rec-card">
+      <div class="rec-name">Oiga Technologies (10Pearls)</div>
+      <div class="rec-meta">Rionegro — Llanogrande · IA/ML, política de talento joven local</div>
+      <div class="rec-link"><a href="https://www.magneto365.com/co/empresas/airplan/empleos" target="_blank" rel="noopener">Ver vacantes en Magneto →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">UCO — Univ. Católica de Oriente</div>
+      <div class="rec-meta">Rionegro · Sistemas/soporte TI campus y plataformas virtuales</div>
+      <div class="rec-link"><a href="mailto:selecciongh@uco.net.co">selecciongh@uco.net.co →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">UCN — Centro Servicios Rionegro</div>
+      <div class="rec-meta">Rionegro · Infraestructura plataformas educativas virtuales</div>
+      <div class="rec-link"><a href="mailto:cserionegro@ucn.edu.co">cserionegro@ucn.edu.co →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">SENA APE Antioquia</div>
+      <div class="rec-meta">Regional · Bolsa de empleo gratuita — registrar CV en portal</div>
+      <div class="rec-link"><a href="https://ape.sena.edu.co" target="_blank" rel="noopener">ape.sena.edu.co →</a></div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-name">Cubo de la Innovación (startups)</div>
+      <div class="rec-meta">Rionegro · Kayita, Dronheart, Equilibrium — networking y hackathones GovTech</div>
+      <div class="rec-link"><a href="https://cubodelainnovacion.com" target="_blank" rel="noopener">cubodelainnovacion.com →</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty" style="display:none">No jobs match your filter.</div>
+
+<script>
+const JOBS = [
+  // ── LOCAL — Oriente Antioqueño + Medellín presencial ──
+  {id:1,title:"Desarrollador Full Stack Junior",company:"COBRA Instalaciones y Servicios",location:"Medellín (Presencial)",locationType:"local",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-medellin-desarollador-full-stack-junior-desarrollador-junior-en-medellin-40176B11EAC7639661373E686DCF3405",salary:"$3M COP/mes",posted:"Jun 30 2026",tags:["React","Next.js","Node.js","NestJS","PostgreSQL","Git","Junior"]},
+  {id:2,title:"Analista y Desarrollador Junior",company:"HiMed Solutions",location:"Envigado (Presencial)",locationType:"local",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-analista-y-desarrollador-junior-envigado-en-envigado-5DBAFDE2CB6E2EBF61373E686DCF3405",salary:"$4.2M COP/mes",posted:"Jun 28 2026",tags:["Python","JavaScript","Docker","Node.js","Django","MySQL","Git","Linux","Junior"],warning:"Stack muy amplio para junior (Python + Docker + Django + Node.js + MySQL + Linux)"},
+  {id:15,title:"Desarrollador Junior",company:"We-Talk AI",location:"Medellín (Presencial)",locationType:"local",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-junior-en-medellin-276491074E8511A761373E686DCF3405",salary:"$2.7M COP/mes",posted:"Jun 30 2026",tags:["TypeScript","Next.js","React","IA","LLM","Chatbot","APIs","Junior"]},
+  {id:16,title:"Ingeniero Desarrollador Soluciones IA",company:"Importante empresa del sector",location:"Bogotá (Presencial)",locationType:"local",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-ingeniero-desarrollador-de-soluciones-ia-y-bases-de-datos-en-bogota-dc-CE22B48F49FEB8C261373E686DCF3405",salary:null,posted:"Jul 1 2026",tags:["IA","Bases de Datos","Python","SQL","Desarrollo"],warning:"Empresa anónima, sin salario publicado"},
+  {id:17,title:"Desarrollador(a) de Software Junior",company:"SMARTCOL SAS",location:"Bogotá (Presencial)",locationType:"local",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-a-de-software-junior-tiempo-completo-en-bogota-dc-1D55EA30CF6DEBCB61373E686DCF3405",salary:"$2.2M COP/mes",posted:"Jun 28 2026",tags:["Junior","Desarrollo","Software"]},
+
+  // ── HYBRID — Medellín ≤2 días/sem ──
+  {id:3,title:"Full Stack Developer",company:"Alberto Alvarez S.A. / Innovaatech",location:"Medellín — Híbrido",locationType:"hybrid",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-full-stack-developer-con-o-sin-discapacidad-medellin-en-medellin-36D8595E9651C12861373E686DCF3405",salary:"$4M COP/mes",posted:"Jun 30 2026",tags:["React","Angular","Next.js","Node.js","MySQL","PostgreSQL","Git","Full Stack"],warning:"Stack muy amplio: React + Angular + Next.js + Node.js, perfil más senior"},
+  {id:4,title:"Practicante Desarrollo de Software",company:"emtelco",location:"Medellín — Híbrido",locationType:"hybrid",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-practicante-en-desarrollo-de-software-o-afines-habilitadoa-para-firmar-contrato-de-aprendizaje-en-medellin-7BA7828A28853CD261373E686DCF3405",salary:"$1.75M COP/mes",posted:"Jun 25 2026",tags:["Desarrollo","Prácticas","Aprendizaje"],warning:"Contrato de aprendizaje, salario bajo ($1.75M), no es rol de developer pleno"},
+  {id:18,title:"Desarrollador FullStack Jr",company:"Tangible",location:"Medellín — Híbrido",locationType:"hybrid",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-fullstack-jr-en-medellin-4F0B8477B189692E61373E686DCF3405",salary:"$3.9M COP/mes",posted:"Jun 2026",tags:["Full Stack","Junior","Medellín"]},
+  {id:19,title:"Desarrollador Fullstack",company:"Empresa líder en pagos automáticos",location:"Bogotá — Híbrido",locationType:"hybrid",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-fullstack-developer-fullstack-en-bogota-dc-8B8242B483467EF561373E686DCF3405",salary:null,posted:"Jun 27 2026",tags:["Full Stack","Híbrido"]},
+  {id:20,title:"Desarrollador Python y Microsoft 365 Azure",company:"Alfredo Lopez y Cia",location:"Cali — Híbrido",locationType:"hybrid",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-python-y-microsoft-365-azure-ing-tecnologia-e-innovacon-en-cali-EEC09EE873A5BB5261373E686DCF3405",salary:"$4M COP/mes",posted:"Jun 28 2026",tags:["Python","Azure","Microsoft 365","Híbrido"]},
+
+  // ── REMOTE — LATAM / Colombia ──
+  {id:5,title:"Analista Junior de Automatización y Aplicaciones",company:"Grupo Alcomex",location:"Remote — Colombia",locationType:"remote",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-analista-junior-de-automatizacion-y-aplicaciones-python-y-sql-en-bogota-dc-0EB9FA6EB7A22D6661373E686DCF3405",salary:"$2.5M COP/mes",posted:"Jun 30 2026",tags:["Python","SQL","Automatización","Junior"]},
+  {id:6,title:"Desarrollador Fullstack Junior",company:"Importante empresa del sector",location:"Remote — Colombia",locationType:"remote",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-fullstack-junior-con-o-sin-experiencia-desarrollador-junior-fullstack-en-bogota-dc-3FEB1A8CF1A681D561373E686DCF3405",salary:"$1.75M COP/mes",posted:"Jun 25 2026",tags:["Full Stack","Junior","Sin experiencia"],warning:"Empresa anónima, salario bajo ($1.75M)"},
+  {id:7,title:"Desarrollador Junior Plan Semilla IA",company:"Importante empresa del sector",location:"Remote — Colombia",locationType:"remote",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-desarrollador-junior-plan-semilla-enfoque-en-analitica-e-ia-desarrollador-junior-en-bogota-dc-AEC541D4BCEC81BE61373E686DCF3405",salary:"$1.75M COP/mes",posted:"Jun 25 2026",tags:["Analítica","IA","Junior","Plan Semilla"],warning:"Empresa anónima, salario bajo ($1.75M)"},
+  {id:8,title:"Ingeniero de Sistemas o Electrónico Jr",company:"GIG LATAM",location:"Remote — Colombia",locationType:"remote",platform:"Computrabajo",link:"https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-ingeniero-de-sistemas-o-electronico-jr-en-bogota-dc-E537C993FD83A38D61373E686DCF3405",salary:null,posted:"Jun 24 2026",tags:["Sistemas","Electrónico","Junior"],warning:"Perfil electrónico/sistemas, no es desarrollo de software puro"},
+
+  // ── LINKEDIN — LOCAL ──
+  {id:9,title:"⚡ Programador Python con Electrónica",company:"Sky-ally",location:"Rionegro, Antioquia (On-site · Part-time)",locationType:"local",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4435336163/",salary:null,posted:"Jun 30 2026",tags:["Python","Electrónica","Sistemas Embebidos","Sensores","Hardware","Rionegro"]},
+
+  // ── LINKEDIN — HYBRID ──
+  {id:10,title:"Junior/Mid Full Stack Engineer",company:"Medallo.dev",location:"Medellín (On-site)",locationType:"hybrid",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4434224759/",salary:null,posted:"Jun 27 2026",tags:["React","TypeScript","Node.js","Full Stack","Real Estate","Junior"]},
+  {id:21,title:"Desarrollador(a) Junior",company:"Symplifica",location:"Bogotá — Híbrido",locationType:"hybrid",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4432328677/",salary:null,posted:"Jul 1 2026",tags:["Junior","Desarrollo","Híbrido"]},
+
+  // ── LINKEDIN — REMOTE ──
+  {id:11,title:"⚡ Junior Software Engineer (Colombia)",company:"Sezzle",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4271082569/",salary:null,posted:"Jun 2026",tags:["Python","Go","React","TypeScript","Fintech","Junior"]},
+  {id:12,title:"Desarrollador/a MERN",company:"Excelia",location:"Remote — Bogotá, Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4400460821/",salary:null,posted:"Jun 2026",tags:["MongoDB","Express","React","Node.js","MERN","Full Stack"]},
+  {id:13,title:"Ingeniero/a de Inteligencia Artificial Junior",company:"Falabella",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4412398635/",salary:null,posted:"Jun 2026",tags:["IA","Machine Learning","AI","Junior","Retail"]},
+  {id:14,title:"Junior Software Engineer — Remote, Colombia",company:"MixRank",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4415467274/",salary:"$12K–$24K USD/yr",posted:"May 2026",tags:["Python","PostgreSQL","Web Scraping","Data","Junior"]},
+  {id:22,title:"⚡ Ingeniero de Software (Entrenamiento de IA)",company:"Alignerr",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4435357970/",salary:"$20–$100 USD/hr",posted:"Jun 30 2026",tags:["IA","Entrenamiento","Software","Remote","Contractor"]},
+  {id:23,title:"DevOps Engineer (Remote, English)",company:"RedValley",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4435826783/",salary:null,posted:"Jun 30 2026",tags:["DevOps","Remote","English","Easy Apply"]},
+  {id:24,title:"Desarrollador Backend",company:"Michael Page",location:"Remote — Colombia",locationType:"remote",platform:"LinkedIn",link:"https://www.linkedin.com/jobs/view/4434381348/",salary:"$5.85M–$7.15M COP/mes",posted:"Jun 2026",tags:["Backend","Remote","Senior?"]},
+];
+
+// ── STATE ──
+// ── PERSISTENT STATE (by link, survives array changes) ──
+let STATES = {};
+try {
+  STATES = JSON.parse(localStorage.getItem('_job_states') || '{}');
+} catch(e) { STATES = {}; }
+
+function getStatus(id) {
+  const j = JOBS.find(x => x.id === id);
+  return j ? (STATES[j.link] || 'pending') : 'pending';
+}
+function setStatus(id, s) {
+  const j = JOBS.find(x => x.id === id);
+  if (j) { STATES[j.link] = s; localStorage.setItem('_job_states', JSON.stringify(STATES)); }
+}
+
+let currentFilter = 'all';
+let currentShow = 'pending';
+let showApplied = false;
+let showSkipped = false;
+
+function cycleStatus(id) {
+  const st = getStatus(id);
+  if (st === 'pending') { setStatus(id, 'applied'); }
+  else if (st === 'applied') { setStatus(id, 'pending'); }
+  else { setStatus(id, 'pending'); }
+  render();
+}
+function skipJob(id) {
+  const st = getStatus(id);
+  setStatus(id, st === 'skip' ? 'pending' : 'skip');
+  render();
+}
+function toggleShow(s) {
+  showApplied = false;
+  showSkipped = false;
+  currentShow = s;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.show === s));
+  render();
+}
+function toggleShowApplied() {
+  showApplied = !showApplied;
+  showSkipped = false;
+  currentShow = 'pending';
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-applied').classList.toggle('active', showApplied);
+  document.querySelector('.sort-btn[data-show="pending"]').classList.toggle('active', !showApplied);
+  render();
+}
+function toggleShowSkipped() {
+  showSkipped = !showSkipped;
+  showApplied = false;
+  currentShow = 'pending';
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-skipped').classList.toggle('active', showSkipped);
+  document.querySelector('.sort-btn[data-show="pending"]').classList.toggle('active', !showSkipped);
+  render();
+}
+
+// ── RENDER ──
+function filterJobs(j, q) {
+  if (currentFilter !== 'all' && j.locationType !== currentFilter) return false;
+  if (!q) return true;
+  return j.title.toLowerCase().includes(q)
+    || j.company.toLowerCase().includes(q)
+    || j.tags.some(t => t.toLowerCase().includes(q))
+    || j.platform.toLowerCase().includes(q);
+}
+
+function buildCard(j) {
+  const status = getStatus(j.id);
+  const icon = status === 'applied' ? '✓' : status === 'skip' ? '✕' : '';
+  const badgeClass = { remote:'badge-remote', hybrid:'badge-hybrid', local:'badge-local' }[j.locationType];
+  const locationLabel = { remote:'Remote', hybrid:'Hybrid', local:'Local' }[j.locationType];
+  const salaryBadge = j.salary ? `<span class="badge badge-salary">${j.salary}</span>` : '';
+  const postedText = j.posted ? `<span class="posted">${j.posted}</span>` : '<span></span>';
+  const skipIcon = status === 'skip' ? '↩' : '✕';
+  const skipTitle = status === 'skip' ? 'Undo skip' : 'Skip this job';
+  const warnHtml = j.warning ? `<span class="warn-icon">⚠️<span class="warn-tooltip">${j.warning}</span></span> ` : '';
+  const topHtml = j.topPick ? `<span class="top-icon">💎<span class="top-tooltip">${j.topPick}</span></span> ` : '';
+  const easyHtml = j.easyApply ? `<span class="warn-icon">⚡<span class="warn-tooltip">Easy Apply — aplicación rápida</span></span> ` : '';
+
+  return `<div class="card ${status}" id="card-${j.id}">
+    <div class="card-top">
+      <button class="status-btn" onclick="cycleStatus(${j.id})" title="Toggle applied / pending">${icon}</button>
+      <div class="card-title">
+        <h3>${easyHtml}${warnHtml}${topHtml}${j.title.replace(/^[⚡⚠️💎]\s*/, '')}</h3>
+        <div class="company">${j.company}</div>
+      </div>
+      <button class="skip-btn" onclick="skipJob(${j.id})" title="${skipTitle}">${skipIcon}</button>
+    </div>
+    <div class="badges">
+      <span class="badge ${badgeClass}">${locationLabel} · ${j.location}</span>
+      <span class="badge badge-platform">${j.platform}</span>
+      ${salaryBadge}
+    </div>
+    <div class="tags">${j.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    <div class="card-footer">
+      ${postedText}
+      <div class="footer-btns">
+        <button class="assist-btn" onclick="copyApply(${j.id}, this)" title="Copia 'aplica al #${j.id}' para pedirle a Claude que pre-llene la aplicación">⚡ Asistir</button>
+        <a class="view-btn" href="${j.link}" target="_blank" rel="noopener">View Job →</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+
+  // Stats (always over full set)
+  const applied = JOBS.filter(j => getStatus(j.id) === 'applied').length;
+  const skip = JOBS.filter(j => getStatus(j.id) === 'skip').length;
+  const pending = JOBS.length - applied - skip;
+  document.getElementById('stat-total').textContent = JOBS.length;
+  document.getElementById('stat-applied').textContent = applied;
+  document.getElementById('stat-skip').textContent = skip;
+  document.getElementById('stat-pending').textContent = pending;
+
+  // Tab counts (no text filter, no show filter)
+  document.getElementById('tc-all').textContent = JOBS.length;
+  document.getElementById('tc-local').textContent = JOBS.filter(j => j.locationType === 'local').length;
+  document.getElementById('tc-hybrid').textContent = JOBS.filter(j => j.locationType === 'hybrid').length;
+  document.getElementById('tc-remote').textContent = JOBS.filter(j => j.locationType === 'remote').length;
+
+  // Update toggle button texts
+  const appBtn = document.getElementById('sort-applied');
+  if (appBtn) appBtn.textContent = 'Applied (' + applied + ')';
+  const skipBtn = document.getElementById('sort-skipped');
+  if (skipBtn) skipBtn.textContent = 'Skipped (' + skip + ')';
+
+  // Pending jobs (always shown in main grid)
+  let pendingJobs = JOBS.filter(j => getStatus(j.id) === 'pending').filter(j => filterJobs(j, q));
+
+  // Applied section (only if toggled)
+  let appliedJobs = showApplied
+    ? JOBS.filter(j => getStatus(j.id) === 'applied').filter(j => filterJobs(j, q))
+    : [];
+
+  // Skipped section (only if toggled)
+  let skippedJobs = showSkipped
+    ? JOBS.filter(j => getStatus(j.id) === 'skip').filter(j => filterJobs(j, q))
+    : [];
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const totalVisible = pendingJobs.length + appliedJobs.length + skippedJobs.length;
+
+  if (!totalVisible) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let html = pendingJobs.map(buildCard).join('');
+
+  if (appliedJobs.length) {
+    html += `<div class="skipped-divider"><span>Applied (${appliedJobs.length})</span></div>`;
+    html += appliedJobs.map(buildCard).join('');
+  }
+
+  if (skippedJobs.length) {
+    html += `<div class="skipped-divider"><span>Skipped (${skippedJobs.length})</span></div>`;
+    html += skippedJobs.map(buildCard).join('');
+  }
+
+  grid.innerHTML = html;
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    render();
+  });
+});
+
+// Copia el comando "aplica al #N" al portapapeles para pedirle a Claude el pre-llenado.
+function copyApply(id, btn) {
+  const cmd = 'aplica al #' + id;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+  }).catch(() => {
+    // Fallback si el navegador bloquea el clipboard (ej. file:// sin permiso)
+    window.prompt('Copia este comando y pídeselo a Claude:', cmd);
+  });
+}
+
+function toggleRecursos() {
+  const s = document.getElementById('recursos-section');
+  const btn = document.getElementById('recursos-btn');
+  const visible = s.style.display !== 'none';
+  s.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? 'Recursos Locales ▼' : 'Recursos Locales ▲';
+}
+
+// One-time cleanup of old j_* keys from previous tracker versions
+(function() {
+  const keys = [];
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('j_')) keys.push(k);
+  }
+  keys.forEach(k => localStorage.removeItem(k));
+})();
+
+render();
+</script>
+</body>
+</html>
