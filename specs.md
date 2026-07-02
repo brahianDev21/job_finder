@@ -726,12 +726,43 @@ To keep the app a "single file that works when opened," heavy libraries (PDF.js,
 1. Not bundled — they are loaded dynamically from CDN only when the user uploads a file of that type.
 2. Indicated in the UI: _"Loading PDF parser..."_ with a spinner.
 
+### LLM Provider Flexibility
+
+The app is designed to be **LLM-agnostic**. No provider is hardcoded. Instead:
+
+- A single `provider.js` configuration module defines API endpoint, model name, headers, and request/response format.
+- Switching between OpenAI, Claude, Groq, Ollama, or any OpenAI-compatible endpoint is done by editing that config or using the settings UI.
+- The app auto-detects the provider format based on the endpoint URL and adjusts request/response parsing accordingly.
+- Default provider is OpenAI-compatible API format (most widely supported). Claude-native format is also supported.
+
+### Web Fetching Strategy
+
+Two proxy modes, user-selectable in settings:
+
+1. **Public proxy** (default) — Uses `allorigins.win` or `corsproxy.io`. Zero setup. Works out of the box. Good for casual use.
+2. **Local proxy** — Ships with a `proxy.py` (30-line Python script). Run `python proxy.py` in a terminal, the app connects to `localhost:8765`. More private, no rate limits. Good for power users.
+3. **Direct** — Attempts direct fetch. Works only on platforms that don't block CORS (RemoteOK, WeWorkRemotely).
+
+### CV File Size
+
+Maximum CV file size: **10 MB**. If the file exceeds this, a warning is shown and the user is prompted to reduce the file size or paste the text manually.
+
+### Research Concurrency
+
+The user configures concurrency in settings:
+
+- **Sequential** (1 platform at a time): Slower, uses fewer API calls, easier to debug. Default.
+- **Balanced** (2 platforms at a time): Moderate speed and cost.
+- **Aggressive** (all platforms simultaneously): Fastest, highest parallel API cost.
+
+The user can change this at any time, even mid-research (affects the next batch).
+
 ### Security
 
 - **API key never leaves the browser** except via direct HTTPS calls to the LLM provider's API.
 - **No telemetry, no analytics, no tracking.** The app has zero external requests except: LLM API calls, CORS proxy (for job platforms), and CDN loads for optional libraries.
 - **CV data stays local.** The raw CV text is sent to the LLM for parsing, but the file itself never leaves the browser.
-- Users are informed: _"Your CV content will be sent to OpenAI/Claude's API for parsing. Nothing is stored on our servers (we don't have any)."_
+- Users are informed: _"Your CV content will be sent to the LLM API for parsing. Nothing is stored on intermediate servers (we don't run any)."_
 
 ---
 
@@ -754,17 +785,12 @@ Add the refinement bar, sort options, assist button enhancements, export/import,
 
 ---
 
-## 10. Open Questions for the User
+## 10. Resolved Decisions
 
-1. **LLM provider preference?** OpenAI (GPT-4o) is recommended for structured output reliability. Claude is a strong alternative. Should both be supported from day 1, or just one?
-
-2. **Web fetching proxy?** Job platforms block browser CORS. MVP options:
-   - Use a public proxy like `allorigins.win` (free, no setup, but rate-limited and not private).
-   - Ship a tiny local proxy script (e.g., a 20-line Python/Node server the user runs alongside the app).
-   - Which approach?
-
-3. **CV file size limit?** PDFs can be large. Should there be a cap (e.g., 5MB) or use chunked API calls for big files?
-
-4. **Match score threshold default?** Currently spec'd at 60. Too high? Too low?
-
-5. **Research concurrency?** Sequential (slower, cheaper) vs parallel (faster, costlier)? The spec assumes sequential, one platform at a time.
+| Question | Decision |
+|---|---|
+| LLM provider | No specific provider. App is LLM-agnostic with configurable endpoint, model, and format (OpenAI-compatible + Claude-native). |
+| Web proxy | Both public proxy (default, zero setup) and local proxy (`proxy.py`, more private). User-selectable in settings. |
+| CV file size max | 10 MB. |
+| Match score threshold | 60 (configurable by user). |
+| Research concurrency | User-configurable: sequential, balanced (2x), or aggressive (all-at-once). Settable in settings at any time.

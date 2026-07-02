@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Finder AI</title>
+<style>
+:root {
+  --bg: #0c0e13;
+  --surface: #13161e;
+  --surface2: #1a1e28;
+  --border: #252a35;
+  --border-light: #2e3340;
+  --text: #e1e6ef;
+  --text2: #b0b8c5;
+  --muted: #6b7385;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-bg: rgba(99,102,241,0.12);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --yellow: #f59e0b;
+  --yellow-bg: rgba(245,158,11,0.12);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --purple: #a855f7;
+  --purple-bg: rgba(168,85,247,0.12);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+
+/* ── HEADER ── */
+.header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 24px 0; }
+.header-top { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.btn-sm { padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; background: var(--surface2); color: var(--text2); transition: all .15s; white-space: nowrap; }
+.btn-sm:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.btn-sm.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-sm.primary:hover { background: var(--accent-hover); }
+
+/* ── STATS ── */
+.stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.stat { background: var(--surface2); border-radius: 8px; padding: 6px 14px; text-align: center; min-width: 65px; border: 1px solid var(--border); }
+.stat .num { font-size: 19px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.stat .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat.s-total .num { color: var(--accent); }
+.stat.s-applied .num { color: var(--green); }
+.stat.s-skip .num { color: var(--red); }
+.stat.s-pending .num { color: var(--blue); }
+.stat.s-new .num { color: var(--purple); }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 0; border-top: 1px solid var(--border); margin-top: 14px; }
+.tab { padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; white-space: nowrap; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab .count { background: var(--surface2); border-radius: 10px; padding: 1px 7px; font-size: 11px; margin-left: 5px; }
+.tab.active .count { background: var(--accent); color: #fff; }
+
+/* ── SECTION PANEL ── */
+.panel { margin: 16px 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.panel-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: border-color .2s; }
+.panel-header:hover { background: var(--surface2); }
+.panel.expanded .panel-header { border-bottom-color: var(--border); }
+.panel-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.panel-title .icon { font-size: 16px; }
+.panel-title .badge-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.panel-title .badge-dot.done { background: var(--green); }
+.panel-title .badge-dot.pending { background: var(--yellow); }
+.panel-toggle { font-size: 12px; color: var(--muted); transition: transform .2s; }
+.panel.expanded .panel-toggle { transform: rotate(180deg); }
+.panel-body { display: none; padding: 18px; }
+.panel.expanded .panel-body { display: block; }
+
+/* ── FORMS ── */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input, .form-textarea, .form-select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface2); color: var(--text); outline: none; font-family: inherit; transition: border-color .15s; }
+.form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.form-row > * { flex: 1; min-width: 140px; }
+.form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; transition: all .15s; user-select: none; }
+.chip:hover { border-color: var(--accent); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip.disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── FILE DROP ── */
+.drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px; text-align: center; cursor: pointer; transition: all .2s; background: var(--surface2); }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--accent-bg); }
+.drop-zone .drop-icon { font-size: 32px; margin-bottom: 8px; }
+.drop-zone .drop-text { font-size: 13px; color: var(--text2); }
+.drop-zone .drop-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── RESEARCH CONTROLS ── */
+.research-bar { padding: 14px 24px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.research-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-research { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 13px; padding: 8px 20px; }
+.btn-research:hover { background: var(--accent-hover); }
+.btn-research:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger { background: transparent; color: var(--red); border-color: var(--red); }
+.btn-danger:hover { background: var(--red-bg); }
+.progress-wrap { flex: 1; min-width: 200px; max-width: 400px; }
+.progress-text { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
+.progress-steps { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.progress-step { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--surface2); color: var(--muted); }
+.progress-step.done { background: var(--green-bg); color: var(--green); }
+.progress-step.active { background: var(--accent-bg); color: var(--accent); }
+.progress-step.fail { background: var(--red-bg); color: var(--red); }
+
+/* ── REFINE BAR ── */
+.refine-bar { padding: 10px 24px; display: flex; gap: 8px; align-items: center; background: var(--surface); border-bottom: 1px solid var(--border); }
+.refine-bar input { flex: 1; padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface2); color: var(--text); outline: none; }
+.refine-bar input:focus { border-color: var(--accent); }
+.refine-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ── CONTROLS ── */
+.controls { padding: 14px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--bg); border-bottom: 1px solid var(--border); }
+.search { flex: 1; min-width: 200px; max-width: 380px; position: relative; }
+.search input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface2); outline: none; color: var(--text); }
+.search input:focus { border-color: var(--accent); }
+.search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: .4; pointer-events: none; }
+.sort-label { font-size: 12px; color: var(--muted); }
+.sort-btn { padding: 6px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; background: var(--surface2); cursor: pointer; color: var(--text2); transition: all .15s; white-space: nowrap; }
+.sort-btn:hover { border-color: var(--accent); }
+.sort-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.sort-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; background: var(--surface2); color: var(--text); outline: none; cursor: pointer; }
+.sort-select:focus { border-color: var(--accent); }
+.legend { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+
+/* ── GRID ── */
+.grid { padding: 20px 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.empty { padding: 60px 24px; text-align: center; color: var(--muted); font-size: 14px; }
+.empty .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+
+/* ── CARD ── */
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; transition: border-color .15s, box-shadow .15s; position: relative; display: flex; flex-direction: column; gap: 10px; }
+.card:hover { border-color: var(--border-light); box-shadow: var(--shadow); }
+.card.applied { border-color: var(--green); background: rgba(34,197,94,0.04); }
+.card.skip { border-color: #1a1d24; opacity: .55; }
+.card.flagged { border-left: 3px solid var(--yellow); }
+
+.skipped-divider { grid-column: 1 / -1; padding: 14px 0 6px; margin-top: 8px; border-top: 1px dashed var(--border); }
+.skipped-divider span { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--bg); padding: 2px 12px; border-radius: 20px; }
+
+.card-top { display: flex; align-items: flex-start; gap: 10px; }
+.status-btn { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .15s; margin-top: 1px; color: var(--muted); }
+.status-btn:hover { border-color: var(--accent); color: var(--text); }
+.card.applied .status-btn { background: var(--green); border-color: var(--green); color: #fff; }
+.card.skip .status-btn { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+
+.skip-btn { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; border: 1px solid transparent; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); transition: all .15s; margin-top: 2px; }
+.skip-btn:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+.card.skip .skip-btn:hover { color: var(--text2); border-color: var(--border); background: var(--surface2); }
+
+.card-title { flex: 1; }
+.card-title h3 { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; }
+.card.applied h3 { color: var(--green); }
+.card.skip h3 { color: var(--muted); }
+.company { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.match-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 10px; white-space: nowrap; margin-left: 6px; }
+.match-high { background: var(--green-bg); color: var(--green); }
+.match-mid { background: var(--blue-bg); color: var(--blue); }
+.match-low { background: var(--surface2); color: var(--muted); }
+
+.badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.badge { font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.badge-remote { background: var(--green-bg); color: var(--green); }
+.badge-hybrid { background: var(--blue-bg); color: var(--blue); }
+.badge-local  { background: var(--yellow-bg); color: var(--yellow); }
+.badge-platform { background: var(--surface2); color: var(--text2); }
+.badge-salary { background: var(--yellow-bg); color: var(--yellow); }
+.badge-new { background: var(--purple-bg); color: var(--purple); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 10px; background: var(--accent-bg); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-weight: 500; }
+
+.card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+.posted { font-size: 10.5px; color: var(--muted); }
+.view-btn { padding: 6px 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background .15s; }
+.view-btn:hover { background: var(--accent-hover); }
+.card.skip .view-btn { background: var(--surface2); color: var(--muted); }
+.footer-btns { display: flex; gap: 6px; align-items: center; }
+
+/* ── TOOLTIPS ── */
+.tip-icon { cursor: help; position: relative; display: inline-block; margin-right: 1px; }
+.tip-tooltip { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: var(--surface2); color: var(--text); font-size: 11px; font-weight: 400; line-height: 1.3; padding: 5px 10px; border-radius: var(--radius-sm); white-space: nowrap; z-index: 20; pointer-events: none; opacity: 0; transition: opacity .15s; border: 1px solid var(--border); }
+.tip-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--border); }
+.tip-icon:hover .tip-tooltip { opacity: 1; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h2 { font-size: 16px; font-weight: 600; }
+.modal-close { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.modal-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.modal-body { padding: 20px; }
+.modal-body .form-group:last-child { margin-bottom: 0; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── TOAST ── */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: var(--shadow); animation: slideIn .3s ease; max-width: 360px; }
+.toast.success { background: var(--green); color: #fff; }
+.toast.error { background: var(--red); color: #fff; }
+.toast.info { background: var(--accent); color: #fff; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .grid { grid-template-columns: 1fr; padding: 12px; }
+  .panel { margin: 12px; }
+  .research-bar, .refine-bar, .controls { padding: 12px; }
+  .stats { gap: 4px; }
+  .stat { min-width: 55px; padding: 4px 8px; }
+  .stat .num { font-size: 16px; }
+  .header { padding: 14px 16px 0; }
+  .form-row { flex-direction: column; }
+  .legend { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .grid { padding: 8px; }
+  .tabs { overflow-x: auto; }
+  .tab { padding: 8px 12px; font-size: 12px; }
+  .research-actions { flex-direction: column; align-items: stretch; }
+  .progress-wrap { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div class="modal-overlay" id="settings-modal" style="display:none">
+<div class="modal">
+<div class="modal-header">
+  <h2>Settings</h2>
+  <button class="modal-close" onclick="closeSettings()">✕</button>
+</div>
+<div class="modal-body">
+  <div class="form-group">
+    <label class="form-label">LLM Provider</label>
+    <select class="form-select" id="set-provider" onchange="onProviderChange()">
+      <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
+      <option value="anthropic">Anthropic (Claude Sonnet)</option>
+      <option value="openrouter">OpenRouter (multi-model)</option>
+      <option value="ollama">Ollama (local)</option>
+      <option value="custom">Custom OpenAI-compatible endpoint</option>
+    </select>
+  </div>
+  <div class="form-group" id="set-endpoint-group">
+    <label class="form-label">API Endpoint</label>
+    <input class="form-input" id="set-endpoint" placeholder="https://api.openai.com/v1">
+    <div class="form-hint">Base URL for chat completions</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Model</label>
+    <input class="form-input" id="set-model" placeholder="gpt-4o">
+  </div>
+  <div class="form-group">
+    <label class="form-label">API Key</label>
+    <input class="form-input" type="password" id="set-apikey" placeholder="sk-...">
+    <div class="form-hint">Stored only in your browser's localStorage. Never sent anywhere except the provider's API.</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Web Fetch Proxy</label>
+    <select class="form-select" id="set-proxy">
+      <option value="public">Public proxy (allorigins.win, no setup)</option>
+      <option value="local">Local proxy (python proxy.py, port 8765)</option>
+      <option value="direct">Direct (only works on CORS-friendly sites)</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Research Concurrency</label>
+    <select class="form-select" id="set-concurrency">
+      <option value="1">Sequential (1 platform at a time, slower, cheaper)</option>
+      <option value="2" selected>Balanced (2 platforms at a time)</option>
+      <option value="0">Aggressive (all platforms simultaneously, fastest)</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Match Score Threshold</label>
+    <input class="form-input" type="number" id="set-threshold" min="0" max="100" value="60" placeholder="60">
+    <div class="form-hint">Jobs below this score are filtered out during research (0-100)</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Temperature</label>
+    <input class="form-input" type="number" id="set-temperature" min="0" max="2" step="0.1" value="0.3" placeholder="0.3">
+    <div class="form-hint">Lower = more precise, higher = more creative (0-2)</div>
+  </div>
+  <div class="form-group" style="display:flex;align-items:center;gap:8px">
+    <input type="checkbox" id="set-stream" checked>
+    <label style="font-size:13px;color:var(--text2);cursor:pointer" for="set-stream">Stream responses (real-time text)</label>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn-sm" onclick="closeSettings()">Cancel</button>
+  <button class="btn-sm primary" onclick="saveSettings()">Save</button>
+  <button class="btn-sm" onclick="testConnection()" style="background:var(--green-bg);color:var(--green);border-color:var(--green)">Test Connection</button>
+</div>
+</div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+<div class="header-top">
+  <div>
+    <h1>Job Finder AI</h1>
+    <div class="sub">Upload your CV, set preferences, and let AI find your next job</div>
+  </div>
+  <div class="stats">
+    <div class="stat s-total"><div class="num" id="stat-total">0</div><div class="lbl">Total</div></div>
+    <div class="stat s-pending"><div class="num" id="stat-pending">0</div><div class="lbl">Pending</div></div>
+    <div class="stat s-applied"><div class="num" id="stat-applied">0</div><div class="lbl">Applied</div></div>
+    <div class="stat s-skip"><div class="num" id="stat-skip">0</div><div class="lbl">Skipped</div></div>
+    <div class="stat s-new"><div class="num" id="stat-new">0</div><div class="lbl">New</div></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" data-filter="all">All <span class="count" id="tc-all">0</span></div>
+  <div class="tab" data-filter="local">Local <span class="count" id="tc-local">0</span></div>
+  <div class="tab" data-filter="hybrid">Hybrid <span class="count" id="tc-hybrid">0</span></div>
+  <div class="tab" data-filter="remote">Remote <span class="count" id="tc-remote">0</span></div>
+</div>
+</div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div class="panel expanded" id="panel-profile">
+<div class="panel-header" onclick="togglePanel('panel-profile')">
+  <div class="panel-title"><span class="icon">👤</span> Profile <span class="badge-dot" id="profile-dot"></span></div>
+  <div class="panel-toggle">▼</div>
+</div>
+<div class="panel-body">
+  <div class="drop-zone" id="cv-drop" onclick="document.getElementById('cv-file').click()">
+    <div class="drop-icon">📎</div>
+    <div class="drop-text">Click to upload your CV or drag it here</div>
+    <div class="drop-sub">PDF, DOCX, TXT, PNG, JPG — max 10 MB</div>
+    <input type="file" id="cv-file" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" style="display:none" onchange="handleFileUpload(event)">
+  </div>
+  <div style="margin-top:14px; display:flex; gap:8px; align-items:center">
+    <button class="btn-sm" onclick="showManualProfile()" id="btn-manual">✏ Enter experience manually</button>
+    <button class="btn-sm primary" onclick="parseProfileWithAI()" id="btn-parse-ai" style="display:none">🤖 Parse with AI</button>
+    <span style="font-size:11px;color:var(--muted)" id="cv-status"></span>
+  </div>
+  <div id="profile-preview" style="margin-top:14px; display:none"></div>
+</div>
+</div>
+
+<div class="panel" id="panel-preferences">
+<div class="panel-header" onclick="togglePanel('panel-preferences')">
+  <div class="panel-title"><span class="icon">🎯</span> Job Preferences</div>
+  <div class="panel-toggle">▼</div>
+</div>
+<div class="panel-body">
+  <div style="display:flex; gap:8px; margin-bottom:14px">
+    <button class="btn-sm primary" onclick="startPreferenceInterview()">🤖 AI Interview</button>
+    <button class="btn-sm" onclick="togglePrefForm()" id="btn-pref-form">✏ Fill manually</button>
+  </div>
+  <div id="pref-interview" style="display:none">
+    <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; min-height:100px; max-height:300px; overflow-y:auto; margin-bottom:12px; background:var(--surface2); font-size:13px" id="interview-log"></div>
+    <div style="display:flex; gap:8px">
+      <input class="form-input" id="interview-input" placeholder="Type your answer..." style="flex:1" onkeydown="if(event.key==='Enter')sendInterviewAnswer()">
+      <button class="btn-sm primary" onclick="sendInterviewAnswer()">Send</button>
+      <button class="btn-sm" onclick="skipInterview()">Skip</button>
+    </div>
+  </div>
+  <div id="pref-form" style="display:none">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Target Job Titles</label>
+        <input class="form-input" id="pref-roles" placeholder="React Developer, Frontend Engineer (comma separated)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seniority Level</label>
+        <select class="form-select" id="pref-seniority">
+          <option value="any">Any</option>
+          <option value="junior">Junior</option>
+          <option value="mid" selected>Mid-level</option>
+          <option value="senior">Senior</option>
+          <option value="lead">Lead / Manager</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Min Salary</label>
+        <input class="form-input" type="number" id="pref-salary-min" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Salary</label>
+        <input class="form-input" type="number" id="pref-salary-max" placeholder="999999999">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Currency</label>
+        <select class="form-select" id="pref-currency">
+          <option value="COP">COP (Colombian Peso)</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="MXN">MXN</option>
+          <option value="ARS">ARS</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Location</label>
+      <input class="form-input" id="pref-location" placeholder="Medellín, Colombia (city or region, comma separated)">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Work Modality</label>
+      <div class="chip-group" id="pref-modality">
+        <span class="chip active" data-val="remote">Remote</span>
+        <span class="chip active" data-val="hybrid">Hybrid</span>
+        <span class="chip" data-val="onsite">On-site</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Include Keywords</label>
+        <input class="form-input" id="pref-include" placeholder="React, TypeScript, Node.js (comma separated)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exclude Keywords</label>
+        <input class="form-input" id="pref-exclude" placeholder="junior, trainee, internship (comma separated)">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max Job Posting Age (days)</label>
+      <input class="form-input" type="number" id="pref-max-days" value="30" min="1" max="365">
+    </div>
+    <button class="btn-sm primary" onclick="savePreferences()">Save Preferences</button>
+  </div>
+  <div id="pref-summary" style="display:none; font-size:13px; color:var(--text2)"></div>
+</div>
+</div>
+
+<div class="panel" id="panel-platforms">
+<div class="panel-header" onclick="togglePanel('panel-platforms')">
+  <div class="panel-title"><span class="icon">🌐</span> Platforms</div>
+  <div class="panel-toggle">▼</div>
+</div>
+<div class="panel-body" id="platforms-list">
+  <div style="font-size:12px;color:var(--muted)">Loading platforms...</div>
+</div>
+</div>
+
+<!-- ═══ RESEARCH ═══ -->
+<div class="research-bar">
+<div class="research-actions">
+  <button class="btn btn-research" id="btn-research" onclick="startResearch()">▶ Start Research</button>
+  <button class="btn btn-sm" id="btn-pause" onclick="pauseResearch()" style="display:none">⏸ Pause</button>
+  <button class="btn btn-sm" id="btn-cancel" onclick="cancelResearch()" style="display:none">✕ Cancel</button>
+  <div class="progress-wrap" id="progress-wrap" style="display:none">
+    <div class="progress-text"><span id="progress-label">Researching...</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-steps" id="progress-steps"></div>
+  </div>
+  <div style="font-size:11px;color:var(--muted)" id="research-info">
+    <span id="research-cost-estimate"></span>
+  </div>
+</div>
+</div>
+
+<div class="refine-bar">
+  <span style="font-size:12px;color:var(--muted);white-space:nowrap">Refine:</span>
+  <input type="text" id="refine-input" placeholder="e.g. only remote, exclude junior roles, add Python to skills..." onkeydown="if(event.key==='Enter')applyRefinement()">
+  <button class="btn-sm primary" onclick="applyRefinement()">Apply</button>
+  <span class="refine-hint">💡 Try: "exclude junior roles" or "only remote" or "salary above $3M"</span>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div class="controls">
+<div class="search">
+  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#6b7385" stroke-width="2"/><path d="M13.5 13.5L17 17" stroke="#6b7385" stroke-width="2" stroke-linecap="round"/></svg>
+  <input type="text" id="search" placeholder="Filter by title, company, tag..." oninput="render()">
+</div>
+<span class="sort-label">Show:</span>
+<button class="sort-btn active" data-show="pending" onclick="toggleShow('pending')">Pending</button>
+<button class="sort-btn" id="show-applied" onclick="toggleShowApplied()" style="color:var(--green)">Applied</button>
+<button class="sort-btn" id="show-skipped" onclick="toggleShowSkipped()" style="color:var(--red)">Skipped</button>
+<span class="sort-label">Sort:</span>
+<select class="sort-select" id="sort-select" onchange="onSortChange()">
+  <option value="match_desc">Match ↓</option>
+  <option value="match_asc">Match ↑</option>
+  <option value="date_desc">Newest</option>
+  <option value="date_asc">Oldest</option>
+  <option value="salary_desc">Salary ↓</option>
+  <option value="title_asc">Title A-Z</option>
+</select>
+<div class="legend">
+  <span><span class="legend-dot" style="background:var(--green)"></span>Applied</span>
+  <span><span class="legend-dot" style="background:var(--muted)"></span>Skip</span>
+  <span><span class="legend-dot" style="background:var(--border);border:1px solid var(--border-light)"></span>Pending</span>
+</div>
+</div>
+
+<!-- ═══ GRID ═══ -->
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty" style="display:none">
+  <div class="empty-icon">📭</div>
+  <div>No jobs found.</div>
+  <div style="font-size:12px;margin-top:4px">Upload your profile, set preferences, and click "Start Research" to find jobs.</div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════════
+
+const LS_PREFIX = 'jf_';
+
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(LS_PREFIX + key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { return fallback; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(val)); } catch(e) {}
+}
+
+// ── Settings ──
+function loadSettings() {
+  return lsGet('settings', {
+    provider: 'openai',
+    endpoint: 'https://api.openai.com/v1',
+    model: 'gpt-4o',
+    apikey: '',
+    proxy: 'public',
+    concurrency: 2,
+    threshold: 60,
+    temperature: 0.3,
+    stream: true
+  });
+}
+function saveSettingsToLS(s) { lsSet('settings', s); }
+
+let SETTINGS = loadSettings();
+
+// ── Profile ──
+function loadProfile() { return lsGet('profile', null); }
+function saveProfile(p) { lsSet('profile', p); }
+
+// ── Preferences ──
+function loadPreferences() {
+  return lsGet('preferences', {
+    roles: [],
+    seniority: 'mid',
+    salary_min: 0,
+    salary_max: 999999999,
+    currency: 'COP',
+    location: '',
+    modality: ['remote', 'hybrid'],
+    include_keywords: [],
+    exclude_keywords: [],
+    max_posted_days: 30
+  });
+}
+function savePreferencesToLS(p) { lsSet('preferences', p); }
+
+// ── Platforms ──
+function loadPlatforms() {
+  return lsGet('platforms', [
+    { id:'linkedin', name:'LinkedIn', enabled:true, region:'global', job_types:['local','hybrid','remote'],
+      search_url:'https://www.linkedin.com/jobs/search/?keywords={query}&location={location}&f_TPR=r{days}' },
+    { id:'indeed', name:'Indeed', enabled:true, region:'global', job_types:['local','hybrid','remote'],
+      search_url:'https://co.indeed.com/jobs?q={query}&l={location}&fromage={days}' },
+    { id:'computrabajo', name:'Computrabajo', enabled:true, region:'latam', job_types:['local','hybrid'],
+      search_url:'https://co.computrabajo.com/trabajo-de-{query}' },
+    { id:'glassdoor', name:'Glassdoor', enabled:false, region:'global', job_types:['local','hybrid','remote'],
+      search_url:'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={query}&locT=C&locId={location}' },
+    { id:'getonboard', name:'GetOnBoard', enabled:false, region:'latam', job_types:['remote'],
+      search_url:'https://www.getonbrd.com/empleos-{query}' },
+    { id:'remoteok', name:'RemoteOK', enabled:false, region:'global', job_types:['remote'],
+      search_url:'https://remoteok.com/remote-{query}-jobs' },
+    { id:'weworkremotely', name:'We Work Remotely', enabled:false, region:'global', job_types:['remote'],
+      search_url:'https://weworkremotely.com/remote-jobs/search?term={query}' },
+    { id:'torre', name:'Torre', enabled:false, region:'global', job_types:['remote','hybrid'],
+      search_url:'https://torre.co/search?q={query}' }
+  ]);
+}
+function savePlatforms(p) { lsSet('platforms', p); }
+
+// ── Jobs ──
+function loadJobs() { return lsGet('jobs', []); }
+function saveJobs(j) { lsSet('jobs', j); }
+
+// ── State (tracking statuses, not to be confused with SETTINGS) ──
+function loadState() {
+  return lsGet('app_state', {
+    lastResearchAt: null,
+    researchHistory: [],
+    filters: { activeTab:'all', showApplied:false, showSkipped:false, searchQuery:'', sortBy:'match_desc' }
+  });
+}
+function saveState(s) { lsSet('app_state', s); }
+
+let JOBS = loadJobs();
+let PLATFORMS = loadPlatforms();
+let PREFS = loadPreferences();
+let PROFILE = loadProfile();
+let STATE = loadState();
+let STATUSES = lsGet('tracking', {});
+
+function saveStatuses() { lsSet('tracking', STATUSES); }
+function getStatus(link) { return STATUSES[link] || 'pending'; }
+function setStatus(link, s) { STATUSES[link] = s; saveStatuses(); }
+
+let currentFilter = STATE.filters.activeTab || 'all';
+let showApplied = STATE.filters.showApplied || false;
+let showSkipped = STATE.filters.showSkipped || false;
+let currentSort = STATE.filters.sortBy || 'match_desc';
+
+// ═══════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════
+
+function uuid() { return 'j_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+function toast(msg, type) {
+  type = type || 'info';
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3500);
+}
+
+function debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+function formatRelativeDate(d) {
+  if (!d) return '';
+  const now = Date.now();
+  const then = new Date(d).getTime();
+  if (isNaN(then)) return d;
+  const diff = now - then;
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return days + 'd ago';
+  if (days < 30) return Math.floor(days/7) + 'w ago';
+  if (days < 365) return Math.floor(days/30) + 'mo ago';
+  return Math.floor(days/365) + 'y ago';
+}
+
+// ═══════════════════════════════════════════════
+//  SETTINGS UI
+// ═══════════════════════════════════════════════
+
+function openSettings() {
+  const s = SETTINGS;
+  document.getElementById('set-provider').value = s.provider;
+  document.getElementById('set-model').value = s.model;
+  document.getElementById('set-apikey').value = s.apikey;
+  document.getElementById('set-proxy').value = s.proxy;
+  document.getElementById('set-concurrency').value = String(s.concurrency);
+  document.getElementById('set-threshold').value = s.threshold;
+  document.getElementById('set-temperature').value = s.temperature;
+  document.getElementById('set-stream').checked = s.stream;
+  onProviderChange();
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
+function onProviderChange() {
+  const p = document.getElementById('set-provider').value;
+  const ep = document.getElementById('set-endpoint');
+  const eg = document.getElementById('set-endpoint-group');
+  const m = document.getElementById('set-model');
+  const presets = {
+    openai: { endpoint:'https://api.openai.com/v1', model:'gpt-4o' },
+    anthropic: { endpoint:'https://api.anthropic.com/v1', model:'claude-sonnet-4-20250514' },
+    openrouter: { endpoint:'https://openrouter.ai/api/v1', model:'openai/gpt-4o' },
+    ollama: { endpoint:'http://localhost:11434/v1', model:'llama3' },
+    custom: { endpoint:'', model:'' }
+  };
+  const preset = presets[p] || presets.custom;
+  if (p === 'custom') { eg.style.display = 'block'; ep.value = preset.endpoint; m.value = preset.model; }
+  else { eg.style.display = 'none'; ep.value = preset.endpoint; m.value = preset.model; }
+}
+
+function saveSettings() {
+  SETTINGS.provider = document.getElementById('set-provider').value;
+  SETTINGS.endpoint = document.getElementById('set-endpoint').value;
+  SETTINGS.model = document.getElementById('set-model').value;
+  SETTINGS.apikey = document.getElementById('set-apikey').value;
+  SETTINGS.proxy = document.getElementById('set-proxy').value;
+  SETTINGS.concurrency = parseInt(document.getElementById('set-concurrency').value);
+  SETTINGS.threshold = parseInt(document.getElementById('set-threshold').value);
+  SETTINGS.temperature = parseFloat(document.getElementById('set-temperature').value);
+  SETTINGS.stream = document.getElementById('set-stream').checked;
+  saveSettingsToLS(SETTINGS);
+  closeSettings();
+  updateResearchEstimate();
+  toast('Settings saved', 'success');
+}
+
+async function testConnection() {
+  saveSettings();
+  const btn = document.querySelector('#settings-modal .btn-sm[style*="background:var(--green-bg)"]') ||
+              Array.from(document.querySelectorAll('#settings-modal .btn-sm')).find(b => b.textContent.includes('Test'));
+  if (!SETTINGS.apikey) { toast('Enter an API key first', 'error'); return; }
+  const orig = btn.textContent;
+  btn.textContent = 'Testing...';
+  btn.disabled = true;
+  try {
+    const body = { model: SETTINGS.model, messages:[{role:'user',content:'Reply with just "ok"'}], max_tokens:5 };
+    const resp = await callLLM(body);
+    if (resp && resp.choices && resp.choices[0]) {
+      toast('Connection successful! ' + (resp.choices[0].message.content || '').trim(), 'success');
+    } else { toast('Unexpected response format', 'error'); }
+  } catch(e) { toast('Connection failed: ' + e.message, 'error'); }
+  btn.textContent = orig;
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════
+//  LLM API
+// ═══════════════════════════════════════════════
+
+async function callLLM(body, opts) {
+  opts = opts || {};
+  const s = SETTINGS;
+  if (!s.apikey) throw new Error('No API key configured. Open Settings (gear icon) to set it up.');
+
+  const isAnthropic = s.provider === 'anthropic' || s.endpoint.includes('anthropic');
+  let url = isAnthropic ? s.endpoint + '/messages' : s.endpoint + '/chat/completions';
+  let headers = { 'Content-Type': 'application/json' };
+  let payload;
+
+  if (isAnthropic) {
+    headers['x-api-key'] = s.apikey;
+    headers['anthropic-version'] = '2023-06-01';
+    payload = {
+      model: s.model,
+      max_tokens: opts.max_tokens || 4096,
+      temperature: s.temperature,
+      system: body.system || '',
+      messages: body.messages.map(function(m) { return { role: m.role, content: m.content }; })
+    };
+  } else {
+    headers['Authorization'] = 'Bearer ' + s.apikey;
+    payload = {
+      model: s.model,
+      messages: body.messages,
+      temperature: s.temperature,
+      max_tokens: opts.max_tokens || 4096
+    };
+    if (body.response_format) {
+      if (s.provider === 'ollama') {
+        payload.format = body.response_format.type === 'json_object' ? 'json' : undefined;
+      } else if (s.provider === 'openrouter') {
+        payload.response_format = body.response_format;
+      } else {
+        payload.response_format = body.response_format;
+      }
+    }
+    if (s.stream && !opts.noStream) { payload.stream = true; }
+  }
+
+  if (s.stream && !opts.noStream && !isAnthropic) {
+    return await streamLLM(url, headers, payload);
+  }
+
+  const resp = await fetch(url, { method:'POST', headers:headers, body:JSON.stringify(payload) });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(txt.slice(0,300));
+  }
+  return await resp.json();
+}
+
+async function streamLLM(url, headers, payload) {
+  const resp = await fetch(url, { method:'POST', headers:headers, body:JSON.stringify(payload) });
+  if (!resp.ok) { const txt = await resp.text(); throw new Error(txt.slice(0,300)); }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let full = '';
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream:true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const d = line.slice(6);
+        if (d === '[DONE]') continue;
+        try { const j = JSON.parse(d); const c = j.choices?.[0]?.delta?.content || ''; full += c; } catch(e) {}
+      }
+    }
+  }
+  // Simulate non-streaming response format
+  return { choices:[{ message:{ content:full } }] };
+}
+
+async function callLLMStreaming(body, onChunk) {
+  const s = SETTINGS;
+  const isAnthropic = s.provider === 'anthropic' || s.endpoint.includes('anthropic');
+  let url = isAnthropic ? s.endpoint + '/messages' : s.endpoint + '/chat/completions';
+  let headers = { 'Content-Type':'application/json' };
+  let payload;
+
+  if (isAnthropic) {
+    headers['x-api-key'] = s.apikey;
+    headers['anthropic-version'] = '2023-06-01';
+    payload = { model:s.model, max_tokens:4096, temperature:s.temperature, system:body.system||'', messages:body.messages, stream:true };
+  } else {
+    headers['Authorization'] = 'Bearer ' + s.apikey;
+    payload = { model:s.model, messages:body.messages, temperature:s.temperature, max_tokens:4096, stream:true };
+    if (body.response_format) payload.response_format = body.response_format;
+  }
+
+  const resp = await fetch(url, { method:'POST', headers:headers, body:JSON.stringify(payload) });
+  if (!resp.ok) { const txt = await resp.text(); throw new Error(txt.slice(0,300)); }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let full = '', buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream:true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (isAnthropic) {
+        if (line.startsWith('data: ')) {
+          try { const j = JSON.parse(line.slice(6)); if (j.type === 'content_block_delta') { const c = j.delta?.text||''; full+=c; onChunk(c); } }
+          catch(e) {}
+        }
+      } else {
+        if (line.startsWith('data: ')) {
+          const d = line.slice(6);
+          if (d === '[DONE]') continue;
+          try { const j = JSON.parse(d); const c = j.choices?.[0]?.delta?.content||''; full+=c; onChunk(c); } catch(e) {}
+        }
+      }
+    }
+  }
+  return full;
+}
+
+// ═══════════════════════════════════════════════
+//  PROFILE MANAGEMENT
+// ═══════════════════════════════════════════════
+
+window._cvText = null;
+
+async function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { toast('File too large. Max 10 MB.', 'error'); return; }
+
+  document.getElementById('cv-status').textContent = 'Reading file...';
+  try {
+    let text = '';
+    if (file.type === 'application/pdf') { text = await extractPDFText(file); }
+    else if (file.type === 'text/plain' || file.name.endsWith('.txt')) { text = await file.text(); }
+    else if (file.type.includes('image')) { toast('Image CVs require OCR. Paste text manually for now.', 'info'); return; }
+    else { text = await file.text(); } // DOCX or other: try raw text
+
+    if (!text || text.length < 20) { toast('Could not extract text. Try pasting manually.', 'error'); return; }
+
+    window._cvText = text;
+    document.getElementById('cv-status').textContent = 'CV loaded (' + text.length + ' chars). Click "Parse with AI" to extract profile.';
+    document.getElementById('btn-parse-ai').style.display = 'inline-block';
+    document.getElementById('btn-manual').style.display = 'none';
+    toast('CV loaded! Click "Parse with AI" to extract your profile.', 'success');
+  } catch(err) {
+    document.getElementById('cv-status').textContent = 'Error: ' + err.message;
+    toast('Failed to read file: ' + err.message, 'error');
+  }
+}
+
+async function extractPDFText(file) {
+  // Try dynamic PDF.js loading
+  if (typeof pdfjsLib === 'undefined') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    if (typeof pdfjsLib !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  }
+  const arr = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: arr }).promise;
+  let text = '';
+  for (let i=1; i<=doc.numPages; i++) { const page = await doc.getPage(i); const content = await page.getTextContent(); text += content.items.map(function(it){return it.str}).join(' ') + '\n'; }
+  return text;
+}
+
+function loadScript(src) {
+  return new Promise(function(resolve, reject) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function showManualProfile() {
+  const text = prompt('Paste your experience / CV text here (or describe your background):');
+  if (!text || text.length < 20) return;
+  window._cvText = text;
+  document.getElementById('cv-status').textContent = 'Text loaded (' + text.length + ' chars). Click "Parse with AI" to extract profile.';
+  document.getElementById('btn-parse-ai').style.display = 'inline-block';
+  document.getElementById('btn-manual').style.display = 'none';
+}
+
+async function parseProfileWithAI() {
+  if (!window._cvText) { toast('Upload a CV or enter text first', 'error'); return; }
+  const btn = document.getElementById('btn-parse-ai');
+  btn.disabled = true;
+  btn.textContent = 'Parsing...';
+
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: 'You are a CV parser. Extract the following from the CV text into a JSON object. Return ONLY valid JSON, no markdown, no explanation.\n\nSchema:\n{\n  "personal": {"name":"","location":"","email":"","phone":"","linkedin":"","portfolio":""},\n  "skills": [{"name":"","proficiency":"beginner|intermediate|advanced"}],\n  "experience": [{"role":"","company":"","start":"YYYY-MM","end":"YYYY-MM or present","description":"","highlights":[""]}],\n  "education": [{"degree":"","institution":"","year":""}],\n  "languages": ["language (level)"],\n  "summary": "1-2 sentence professional summary"\n}\n\nIf a field is missing from the CV, use null or empty string.' },
+        { role:'user', content: window._cvText }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    const resp = await callLLM(body, { noStream:true });
+    const content = resp.choices[0].message.content;
+    const json = JSON.parse(content.trim());
+    PROFILE = json;
+    PROFILE.raw_cv_text = window._cvText;
+    PROFILE.created_at = new Date().toISOString();
+    saveProfile(PROFILE);
+    renderProfilePreview();
+    document.getElementById('profile-dot').className = 'badge-dot done';
+    toast('Profile extracted!', 'success');
+  } catch(e) {
+    toast('Parse failed: ' + e.message, 'error');
+    document.getElementById('profile-preview').style.display = 'block';
+    document.getElementById('profile-preview').innerHTML =
+      '<div style="padding:14px;background:var(--red-bg);border:1px solid var(--red);border-radius:var(--radius);font-size:13px;color:var(--red)">'
+      + 'Failed to parse: ' + e.message + '<br><br>Make sure your API key is set in Settings (gear icon).</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = '🤖 Parse with AI';
+}
+
+function renderProfilePreview() {
+  if (!PROFILE) return;
+  const p = PROFILE.personal || {};
+  const skills = (PROFILE.skills||[]).map(function(s){return s.name||s}).join(', ');
+  const exp = (PROFILE.experience||[])[0];
+  const expStr = exp ? exp.role + ' at ' + exp.company : '';
+  const div = document.getElementById('profile-preview');
+  div.style.display = 'block';
+  div.innerHTML =
+    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px">'
+    + '<div style="font-size:13px;font-weight:600;margin-bottom:8px">' + (p.name||'Unknown') + '</div>'
+    + '<div style="font-size:12px;color:var(--text2)">' + [p.location, p.email, expStr].filter(Boolean).join(' · ') + '</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-top:8px"><strong>Skills:</strong> ' + (skills||'None') + '</div>'
+    + '<div style="margin-top:8px"><button class="btn-sm" onclick="editProfile()">Edit Profile</button></div>'
+    + '</div>';
+  document.getElementById('btn-parse-ai').style.display = 'none';
+  document.getElementById('btn-manual').style.display = 'none';
+}
+
+function editProfile() {
+  if (!PROFILE) return;
+  const json = JSON.stringify(PROFILE, null, 2);
+  const edited = prompt('Edit your profile JSON directly:', json);
+  if (!edited) return;
+  try { PROFILE = JSON.parse(edited); saveProfile(PROFILE); renderProfilePreview(); toast('Profile updated', 'success'); }
+  catch(e) { toast('Invalid JSON: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════
+//  PREFERENCES
+// ═══════════════════════════════════════════════
+
+function togglePrefForm() {
+  const form = document.getElementById('pref-form');
+  const interview = document.getElementById('pref-interview');
+  const summary = document.getElementById('pref-summary');
+  if (form.style.display === 'block') { form.style.display = 'none'; return; }
+  interview.style.display = 'none';
+  summary.style.display = 'none';
+  form.style.display = 'block';
+  populatePrefForm();
+}
+
+function populatePrefForm() {
+  const p = PREFS;
+  document.getElementById('pref-roles').value = (p.roles||[]).join(', ');
+  document.getElementById('pref-seniority').value = p.seniority||'mid';
+  document.getElementById('pref-salary-min').value = p.salary_min||0;
+  document.getElementById('pref-salary-max').value = p.salary_max||999999999;
+  document.getElementById('pref-currency').value = p.currency||'COP';
+  document.getElementById('pref-location').value = p.location||'';
+  document.getElementById('pref-include').value = (p.include_keywords||[]).join(', ');
+  document.getElementById('pref-exclude').value = (p.exclude_keywords||[]).join(', ');
+  document.getElementById('pref-max-days').value = p.max_posted_days||30;
+  // Modality chips
+  document.querySelectorAll('#pref-modality .chip').forEach(function(c) {
+    c.classList.toggle('active', (p.modality||[]).includes(c.dataset.val));
+  });
+}
+
+// Init chip listeners
+document.querySelectorAll('.chip-group').forEach(function(g) {
+  g.addEventListener('click', function(e) {
+    if (e.target.classList.contains('chip') && !e.target.classList.contains('disabled')) {
+      e.target.classList.toggle('active');
+    }
+  });
+});
+
+function savePreferences() {
+  PREFS.roles = document.getElementById('pref-roles').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
+  PREFS.seniority = document.getElementById('pref-seniority').value;
+  PREFS.salary_min = parseInt(document.getElementById('pref-salary-min').value)||0;
+  PREFS.salary_max = parseInt(document.getElementById('pref-salary-max').value)||999999999;
+  PREFS.currency = document.getElementById('pref-currency').value;
+  PREFS.location = document.getElementById('pref-location').value.trim();
+  PREFS.include_keywords = document.getElementById('pref-include').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
+  PREFS.exclude_keywords = document.getElementById('pref-exclude').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
+  PREFS.max_posted_days = parseInt(document.getElementById('pref-max-days').value)||30;
+  PREFS.modality = [];
+  document.querySelectorAll('#pref-modality .chip.active').forEach(function(c){ PREFS.modality.push(c.dataset.val); });
+  savePreferencesToLS(PREFS);
+  document.getElementById('pref-form').style.display = 'none';
+  renderPrefSummary();
+  updateResearchEstimate();
+  toast('Preferences saved', 'success');
+}
+
+function renderPrefSummary() {
+  const p = PREFS;
+  const summary = document.getElementById('pref-summary');
+  summary.style.display = 'block';
+  summary.innerHTML =
+    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px">'
+    + '<strong>Role:</strong> ' + ((p.roles||[]).join(', ')||'Any') + ' · '
+    + '<strong>Level:</strong> ' + (p.seniority||'Any') + ' · '
+    + '<strong>Salary:</strong> ' + (p.salary_min||0) + '–' + (p.salary_max||'∞') + ' ' + p.currency + ' · '
+    + '<strong>Location:</strong> ' + (p.location||'Any') + ' · '
+    + '<strong>Modality:</strong> ' + ((p.modality||[]).join(', ')||'Any')
+    + '<div style="margin-top:8px"><button class="btn-sm" onclick="togglePrefForm()">Edit</button></div>'
+    + '</div>';
+}
+
+// ── AI Interview ──
+let interviewState = null;
+
+async function startPreferenceInterview() {
+  document.getElementById('pref-form').style.display = 'none';
+  document.getElementById('pref-summary').style.display = 'none';
+  document.getElementById('pref-interview').style.display = 'block';
+  const log = document.getElementById('interview-log');
+  log.innerHTML = '<div style="color:var(--muted)">AI is starting the interview...</div>';
+  document.getElementById('interview-input').focus();
+  interviewState = { stage:0, answers:{} };
+
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: getPreferenceInterviewPrompt() },
+        { role:'user', content: 'Start the interview. Ask me one question at a time.' }
+      ]
+    };
+    const resp = await callLLMStreaming(body, function(chunk) {
+      log.innerHTML = log.innerHTML.replace(/<div style="color:var\(--muted\)">.*/, '');
+      if (!log.lastElementChild || !log.lastElementChild.classList.contains('ai-msg')) {
+        log.innerHTML += '<div class="ai-msg" style="color:var(--accent);margin-bottom:6px">🤖 ';
+        log.lastElementChild.textContent += chunk;
+        log.lastElementChild.innerHTML += '</div>';
+      } else {
+        log.lastElementChild.textContent += chunk;
+      }
+    });
+    log.scrollTop = log.scrollHeight;
+  } catch(e) {
+    log.innerHTML = '<div style="color:var(--red)">Failed: ' + e.message + '. Check your API key in Settings.</div>';
+  }
+}
+
+function getPreferenceInterviewPrompt() {
+  return 'You are a job search assistant conducting a brief interview to understand what the user wants.\n\nAsk these questions ONE AT A TIME, in order:\n1. What job titles are you targeting?\n2. What salary range are you looking for? (currency and amount)\n3. Where do you want to work? (cities, regions, or remote)\n4. What work modality? (remote, hybrid, onsite, or any)\n5. What seniority level? (junior, mid, senior, lead)\n6. Any specific technologies or keywords you want to include or exclude?\n\nKeep it conversational. After all 6 questions, say "That covers everything! I\'ll save your preferences now." and output a JSON block:\n```json\n{"roles":[],"salary_min":0,"salary_max":0,"currency":"","location":"","modality":[],"seniority":"","include_keywords":[],"exclude_keywords":[]}\n```';
+}
+
+async function sendInterviewAnswer() {
+  const input = document.getElementById('interview-input');
+  const answer = input.value.trim();
+  if (!answer) return;
+  const log = document.getElementById('interview-log');
+  log.innerHTML += '<div style="color:var(--text);margin-bottom:6px">👤 ' + answer + '</div>';
+  input.value = '';
+
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: getPreferenceInterviewPrompt() },
+        { role:'assistant', content: log.innerText.replace(/🤖 /g,'').replace(/👤 /g,'') },
+        { role:'user', content: answer }
+      ]
+    };
+    let full = '';
+    log.innerHTML += '<div class="ai-msg" style="color:var(--accent);margin-bottom:6px">🤖 ';
+    await callLLMStreaming(body, function(chunk) {
+      full += chunk;
+      const divs = log.querySelectorAll('.ai-msg');
+      const last = divs[divs.length-1];
+      if (last) last.innerHTML = '🤖 ' + full.replace(/\n/g,'<br>');
+    });
+    log.scrollTop = log.scrollHeight;
+
+    // Check for JSON block
+    const jsonMatch = full.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      try {
+        const prefs = JSON.parse(jsonMatch[1]);
+        PREFS.roles = prefs.roles || [];
+        PREFS.salary_min = prefs.salary_min || 0;
+        PREFS.salary_max = prefs.salary_max || 999999999;
+        PREFS.currency = prefs.currency || 'COP';
+        PREFS.location = prefs.location || '';
+        PREFS.modality = prefs.modality || ['remote','hybrid'];
+        PREFS.seniority = prefs.seniority || 'mid';
+        PREFS.include_keywords = prefs.include_keywords || [];
+        PREFS.exclude_keywords = prefs.exclude_keywords || [];
+        savePreferencesToLS(PREFS);
+        renderPrefSummary();
+        updateResearchEstimate();
+        toast('Preferences saved from interview!', 'success');
+        setTimeout(function() {
+          document.getElementById('pref-interview').style.display = 'none';
+          interviewState = null;
+        }, 2000);
+      } catch(e) { toast('Failed to parse preferences: ' + e.message, 'error'); }
+    }
+  } catch(e) {
+    log.innerHTML += '<div style="color:var(--red)">Error: ' + e.message + '</div>';
+  }
+}
+
+function skipInterview() {
+  document.getElementById('pref-interview').style.display = 'none';
+  interviewState = null;
+  togglePrefForm();
+}
+
+// ═══════════════════════════════════════════════
+//  PLATFORMS
+// ═══════════════════════════════════════════════
+
+function renderPlatforms() {
+  const div = document.getElementById('platforms-list');
+  let html = '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Toggle platforms you want to search on. AI will suggest platforms based on your preferences.</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
+  PLATFORMS.forEach(function(p) {
+    html += '<label class="chip' + (p.enabled?' active':'') + '" style="cursor:pointer">';
+    html += '<input type="checkbox" style="display:none" ' + (p.enabled?'checked':'') + ' data-pid="' + p.id + '" onchange="togglePlatform(\'' + p.id + '\', this.checked)">';
+    html += p.name + ' <span style="font-size:9px;opacity:0.7">(' + p.region + ')</span>';
+    html += '</label>';
+  });
+  html += '</div>';
+  html += '<button class="btn-sm primary" onclick="suggestPlatforms()">🤖 Suggest platforms for my profile</button>';
+  html += '<span id="platform-suggest-status" style="font-size:11px;color:var(--muted);margin-left:8px"></span>';
+  div.innerHTML = html;
+}
+
+function togglePlatform(id, enabled) {
+  const p = PLATFORMS.find(function(x){return x.id===id});
+  if (p) { p.enabled = enabled; savePlatforms(PLATFORMS); updateResearchEstimate(); }
+}
+
+async function suggestPlatforms() {
+  if (!PROFILE) { toast('Create a profile first', 'error'); return; }
+  const btn = document.querySelector('#panel-platforms .btn-sm.primary');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: 'You are a job search platform advisor. Based on the user profile and preferences, suggest which platforms to enable. Return a JSON array of platform IDs (from the list: linkedin, indeed, computrabajo, glassdoor, getonboard, remoteok, weworkremotely, torre). Return only valid JSON.' },
+        { role:'user', content: 'Profile: ' + JSON.stringify({skills:PROFILE.skills,experience:PROFILE.experience,location:PROFILE.personal?.location})
+          + '\nPreferences: ' + JSON.stringify({roles:PREFS.roles,location:PREFS.location,modality:PREFS.modality,seniority:PREFS.seniority}) }
+      ]
+    };
+    const resp = await callLLM(body, { noStream:true });
+    const content = resp.choices[0].message.content.trim();
+    const suggested = JSON.parse(content.match(/\[.*\]/s)?.[0] || content);
+    // Enable suggested, disable others
+    PLATFORMS.forEach(function(p){ p.enabled = (suggested||[]).includes(p.id); });
+    savePlatforms(PLATFORMS);
+    renderPlatforms();
+    updateResearchEstimate();
+    toast('Platforms updated based on AI suggestion', 'success');
+  } catch(e) {
+    toast('Suggestion failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '🤖 Suggest platforms for my profile';
+}
+
+// ═══════════════════════════════════════════════
+//  RESEARCH ENGINE
+// ═══════════════════════════════════════════════
+
+let researchRunning = false;
+let researchPaused = false;
+let researchCancel = false;
+
+function updateResearchEstimate() {
+  const enabled = PLATFORMS.filter(function(p){return p.enabled}).length;
+  const queriesPerPlatform = 3;
+  const totalCalls = enabled * queriesPerPlatform + enabled * 5; // search + extraction estimates
+  const estCost = (totalCalls * 0.001).toFixed(3);
+  const el = document.getElementById('research-cost-estimate');
+  el.textContent = enabled + ' platforms enabled · est. ~' + totalCalls + ' API calls · ~$' + estCost + ' USD';
+}
+
+async function startResearch() {
+  if (researchRunning) return;
+  if (!PROFILE) { toast('Create a profile first from your CV or manual input', 'error'); return; }
+  const enabled = PLATFORMS.filter(function(p){return p.enabled});
+  if (!enabled.length) { toast('Enable at least one platform in the Platforms panel', 'error'); return; }
+
+  researchRunning = true;
+  researchPaused = false;
+  researchCancel = false;
+
+  document.getElementById('btn-research').style.display = 'none';
+  document.getElementById('btn-pause').style.display = 'inline-block';
+  document.getElementById('btn-cancel').style.display = 'inline-block';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('research-cost-estimate').textContent = '';
+
+  const totalSteps = enabled.length;
+  let completed = 0;
+  let newJobs = 0;
+
+  updateProgress(0, 'Starting research...', []);
+
+  try {
+    // Step 1: Construct search queries via LLM
+    updateProgress(5, 'Constructing search queries...', enabled.map(function(p){return {name:p.name,state:'active'}}));
+    const queries = await constructQueries(enabled);
+    if (researchCancel) { resetResearch(); return; }
+
+    // Step 2: Execute search per platform
+    for (let i = 0; i < enabled.length; i++) {
+      if (researchCancel) { resetResearch(); return; }
+      while (researchPaused && !researchCancel) { await sleep(500); }
+
+      const plat = enabled[i];
+      const stepPercent = Math.round(5 + ((i+1) / totalSteps) * 80);
+      const steps = enabled.map(function(p, idx) {
+        if (idx < i) return { name:p.name, state:'done' };
+        if (idx === i) return { name:p.name, state:'active' };
+        return { name:p.name, state:'' };
+      });
+      updateProgress(stepPercent, 'Searching ' + plat.name + '...', steps);
+
+      const platQueries = queries[plat.id] || [];
+      const results = await searchPlatform(plat, platQueries);
+      if (researchCancel) { resetResearch(); return; }
+
+      // Step 3: Score and add jobs
+      if (results.length > 0) {
+        updateProgress(stepPercent, 'Scoring ' + results.length + ' jobs from ' + plat.name + '...', steps);
+        const scored = await scoreAndFilter(results);
+        for (const job of scored) {
+          if (researchCancel) { resetResearch(); return; }
+          if (!isDuplicate(job)) {
+            job.id = uuid();
+            job.platform = plat.name;
+            job.discovered = new Date().toISOString();
+            job.status = 'pending';
+            job.flagged = false;
+            job.notes = '';
+            JOBS.unshift(job);
+            newJobs++;
+          }
+        }
+      }
+
+      completed++;
+      const finalSteps = enabled.map(function(p, idx) {
+        if (idx <= i) return { name:p.name, state:'done' };
+        if (idx === i+1) return { name:p.name, state:'active' };
+        return { name:p.name, state:'' };
+      });
+      updateProgress(5 + Math.round((completed/totalSteps)*80), 'Completed ' + plat.name, finalSteps);
+      saveJobs(JOBS);
+      render();
+
+      // Rate limiting between platforms
+      if (i < enabled.length - 1) {
+        updateProgress(5 + Math.round((completed/totalSteps)*80), 'Waiting before next platform...', finalSteps);
+        await sleep(10000);
+      }
+    }
+
+    updateProgress(100, 'Research complete! Found ' + newJobs + ' new jobs.', enabled.map(function(p){return {name:p.name,state:'done'}}));
+    STATE.lastResearchAt = new Date().toISOString();
+    STATE.researchHistory.push({ startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), platforms: enabled.map(function(p){return p.id}), jobsFound: newJobs, queriesUsed: Object.values(queries).flat() });
+    saveState(STATE);
+    saveJobs(JOBS);
+    toast('Research complete! ' + newJobs + ' new jobs found.', 'success');
+  } catch(e) {
+    updateProgress(0, 'Error: ' + e.message, []);
+    toast('Research failed: ' + e.message, 'error');
+  }
+
+  resetResearch();
+  render();
+}
+
+function resetResearch() {
+  researchRunning = false;
+  researchPaused = false;
+  researchCancel = false;
+  document.getElementById('btn-research').style.display = 'inline-block';
+  document.getElementById('btn-pause').style.display = 'none';
+  document.getElementById('btn-cancel').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  updateResearchEstimate();
+}
+
+function pauseResearch() {
+  researchPaused = !researchPaused;
+  document.getElementById('btn-pause').textContent = researchPaused ? '▶ Resume' : '⏸ Pause';
+}
+
+function cancelResearch() {
+  researchCancel = true;
+  toast('Cancelling research...', 'info');
+}
+
+async function constructQueries(enabledPlatforms) {
+  const queries = {};
+  try {
+    const roles = (PREFS.roles||[]).join(', ') || PROFILE.skills?.slice(0,3).map(function(s){return s.name}).join(', ') || 'developer';
+    const loc = PREFS.location || PROFILE.personal?.location || '';
+    const body = {
+      messages: [
+        { role:'system', content: 'You are a job search query constructor. For each platform, construct 2-3 optimized search queries based on the user profile and preferences. Return a JSON object mapping platform ID to an array of query strings. Only return valid JSON, no explanation.' },
+        { role:'user', content: 'Platforms: ' + JSON.stringify(enabledPlatforms.map(function(p){return{id:p.id,name:p.name,region:p.region}}))
+          + '\nProfile: ' + JSON.stringify({skills:(PROFILE.skills||[]).map(function(s){return s.name}),location:PROFILE.personal?.location})
+          + '\nPreferences: ' + JSON.stringify({roles:PREFS.roles,location:loc,modality:PREFS.modality,seniority:PREFS.seniority,include_keywords:PREFS.include_keywords,exclude_keywords:PREFS.exclude_keywords})
+          + '\nReturn queries for each platform ID.' }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    const resp = await callLLM(body, { noStream:true });
+    const content = resp.choices[0].message.content.trim();
+    const parsed = JSON.parse(content);
+    enabledPlatforms.forEach(function(p) { queries[p.id] = parsed[p.id] || [p.name + ' ' + roles]; });
+  } catch(e) {
+    console.warn('Query construction failed, using defaults:', e);
+    enabledPlatforms.forEach(function(p) {
+      const roles = (PREFS.roles||[]).join(' OR ') || 'developer';
+      queries[p.id] = [roles + ' ' + (PREFS.location||'')];
+    });
+  }
+  return queries;
+}
+
+async function searchPlatform(plat, queries) {
+  const results = [];
+  const baseUrl = plat.search_url || '';
+
+  for (const query of queries.slice(0, 3)) {
+    if (researchCancel) break;
+    const url = constructSearchUrl(baseUrl, query, PREFS.max_posted_days||30);
+    const html = await fetchPage(url);
+    if (!html || html.length < 100) continue;
+
+    const jobs = await extractJobs(html, plat.name);
+    results.push.apply(results, jobs);
+    await sleep(3000); // Gentle on the platform
+  }
+
+  return results;
+}
+
+function constructSearchUrl(template, query, days) {
+  return template
+    .replace(/\{query\}/g, encodeURIComponent(query))
+    .replace(/\{location\}/g, encodeURIComponent(PREFS.location||''))
+    .replace(/\{days\}/g, String(days||30));
+}
+
+async function fetchPage(url) {
+  const proxy = SETTINGS.proxy;
+  if (!url) return '';
+  try {
+    if (proxy === 'direct') {
+      const resp = await fetch(url, { headers:{'User-Agent':'Mozilla/5.0'} });
+      return await resp.text();
+    }
+    if (proxy === 'local') {
+      const resp = await fetch('http://localhost:8765/fetch?url=' + encodeURIComponent(url));
+      const data = await resp.json();
+      return data.content || data.body || data.text || '';
+    }
+    // Public proxy
+    const resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
+    return await resp.text();
+  } catch(e) {
+    console.warn('Failed to fetch ' + url + ': ' + e.message);
+    return '';
+  }
+}
+
+async function extractJobs(html, platform) {
+  // Use LLM to extract jobs from HTML
+  const sample = html.slice(0, 15000); // Limit context size
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: `You are a job listing extractor. Extract all job listings from the HTML content. For each job, return: title, company, location, link (full URL), salary (if visible), posted (date), tags (technologies/skills), description_snippet (first 200 chars of description), easy_apply (boolean), location_type (remote/hybrid/local).
+Return a JSON array. Only return valid JSON, no explanation. If no jobs found, return [].` },
+        { role:'user', content: 'Platform: ' + platform + '\nHTML: ' + sample }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    const resp = await callLLM(body, { noStream:true, max_tokens:8192 });
+    const content = resp.choices[0].message.content.trim();
+    const match = content.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const jobs = JSON.parse(match[0]);
+    return (jobs||[]).filter(function(j){return j.title && j.link});
+  } catch(e) {
+    console.warn('Job extraction failed for ' + platform + ': ' + e.message);
+    return [];
+  }
+}
+
+async function scoreAndFilter(jobs) {
+  if (!jobs.length) return [];
+  try {
+    const profile = JSON.stringify({skills:(PROFILE.skills||[]).map(function(s){return s.name}),experience:PROFILE.experience,location:PROFILE.personal?.location});
+    const prefs = JSON.stringify({roles:PREFS.roles,salary_min:PREFS.salary_min,salary_max:PREFS.salary_max,currency:PREFS.currency,location:PREFS.location,modality:PREFS.modality,seniority:PREFS.seniority,include_keywords:PREFS.include_keywords,exclude_keywords:PREFS.exclude_keywords});
+    const body = {
+      messages: [
+        { role:'system', content: 'You are a job match scorer. For each job in the array, calculate a match_score (0-100) based on how well it matches the user profile and preferences. Also set top_pick (true for >85 score) and warning (if excluded keywords appear). Return the same array with match_score, top_pick, and warning fields added/set. Return only valid JSON array, no explanation.' },
+        { role:'user', content: 'Profile: ' + profile + '\nPreferences: ' + prefs + '\nThreshold: ' + SETTINGS.threshold + '\nJobs: ' + JSON.stringify(jobs.slice(0,50)) }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    const resp = await callLLM(body, { noStream:true, max_tokens:8192 });
+    const content = resp.choices[0].message.content.trim();
+    const match = content.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const scored = JSON.parse(match[0]);
+    return scored.filter(function(j){return (j.match_score||0) >= SETTINGS.threshold});
+  } catch(e) {
+    console.warn('Scoring failed, returning unscored jobs:', e);
+    return jobs.map(function(j){ j.match_score = 50; return j; });
+  }
+}
+
+function isDuplicate(job) {
+  return JOBS.some(function(j) {
+    return j.link === job.link ||
+      (j.title.toLowerCase() === job.title.toLowerCase() && j.company.toLowerCase() === job.company.toLowerCase());
+  });
+}
+
+function sleep(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
+
+// ═══════════════════════════════════════════════
+//  REFINEMENT
+// ═══════════════════════════════════════════════
+
+async function applyRefinement() {
+  const input = document.getElementById('refine-input').value.trim();
+  if (!input) return;
+
+  toast('Applying refinement...', 'info');
+  try {
+    const body = {
+      messages: [
+        { role:'system', content: `You are a preference refiner. Parse the user's natural language feedback and return a JSON object with UPDATED preferences fields that should change. Only include fields that should change. The current preferences are provided. Available fields: roles (array), salary_min (number), salary_max (number), currency (string), location (string), modality (array of remote/hybrid/onsite), seniority (string: junior/mid/senior/lead), include_keywords (array), exclude_keywords (array), max_posted_days (number).
+Return ONLY valid JSON, no explanation.` },
+        { role:'user', content: 'Current preferences: ' + JSON.stringify(PREFS) + '\nUser feedback: "' + input + '"' }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    const resp = await callLLM(body, { noStream:true });
+    const content = resp.choices[0].message.content.trim();
+    const updates = JSON.parse(content);
+
+    // Apply updates
+    Object.keys(updates).forEach(function(k) {
+      if (PREFS.hasOwnProperty(k)) PREFS[k] = updates[k];
+    });
+    savePreferencesToLS(PREFS);
+
+    // Flag jobs that no longer match
+    let flagged = 0;
+    JOBS.forEach(function(j) {
+      const excluded = (PREFS.exclude_keywords||[]).some(function(kw) {
+        return j.title.toLowerCase().includes(kw.toLowerCase());
+      });
+      if (excluded) { j.flagged = true; flagged++; }
+    });
+    saveJobs(JOBS);
+
+    document.getElementById('refine-input').value = '';
+    renderPrefSummary();
+    updateResearchEstimate();
+    render();
+    toast('Preferences updated! ' + (flagged?'Flagged ' + flagged + ' jobs no longer matching.':'') + ' Run research again with new criteria.', 'success');
+  } catch(e) {
+    toast('Refinement failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  PANELS (collapsible sections)
+// ═══════════════════════════════════════════════
+
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  panel.classList.toggle('expanded');
+}
+
+// ═══════════════════════════════════════════════
+//  JOB BOARD RENDERING
+// ═══════════════════════════════════════════════
+
+function cycleStatus(id) {
+  const j = JOBS.find(function(x){return x.id===id});
+  if (!j) return;
+  const st = getStatus(j.link);
+  if (st==='pending') setStatus(j.link, 'applied');
+  else if (st==='applied') setStatus(j.link, 'pending');
+  else setStatus(j.link, 'pending');
+  render();
+}
+
+function skipJob(id) {
+  const j = JOBS.find(function(x){return x.id===id});
+  if (!j) return;
+  const st = getStatus(j.link);
+  setStatus(j.link, st==='skip'?'pending':'skip');
+  render();
+}
+
+function toggleShow(s) {
+  showApplied = false;
+  showSkipped = false;
+  document.querySelectorAll('.sort-btn[data-show]').forEach(function(b){b.classList.remove('active')});
+  if (s==='pending') document.querySelector('.sort-btn[data-show="pending"]').classList.add('active');
+  document.getElementById('show-applied').classList.remove('active');
+  document.getElementById('show-skipped').classList.remove('active');
+  render();
+}
+
+function toggleShowApplied() {
+  showApplied = !showApplied;
+  showSkipped = false;
+  document.getElementById('show-applied').classList.toggle('active', showApplied);
+  document.getElementById('show-skipped').classList.remove('active');
+  document.querySelector('.sort-btn[data-show="pending"]').classList.toggle('active', !showApplied);
+  render();
+}
+
+function toggleShowSkipped() {
+  showSkipped = !showSkipped;
+  showApplied = false;
+  document.getElementById('show-skipped').classList.toggle('active', showSkipped);
+  document.getElementById('show-applied').classList.remove('active');
+  document.querySelector('.sort-btn[data-show="pending"]').classList.toggle('active', !showSkipped);
+  render();
+}
+
+function onSortChange() {
+  currentSort = document.getElementById('sort-select').value;
+  STATE.filters.sortBy = currentSort;
+  saveState(STATE);
+  render();
+}
+
+function filterJobs(j, q) {
+  if (currentFilter!=='all' && j.location_type!==currentFilter) return false;
+  if (!q) return true;
+  q = q.toLowerCase();
+  return (j.title||'').toLowerCase().includes(q)
+    || (j.company||'').toLowerCase().includes(q)
+    || (j.tags||[]).some(function(t){return t.toLowerCase().includes(q)})
+    || (j.platform||'').toLowerCase().includes(q);
+}
+
+function sortJobs(jobs) {
+  return jobs.sort(function(a,b) {
+    switch(currentSort) {
+      case 'match_desc': return (b.match_score||0) - (a.match_score||0);
+      case 'match_asc': return (a.match_score||0) - (b.match_score||0);
+      case 'date_desc': return new Date(b.discovered||b.posted||0).getTime() - new Date(a.discovered||a.posted||0).getTime();
+      case 'date_asc': return new Date(a.discovered||a.posted||0).getTime() - new Date(b.discovered||b.posted||0).getTime();
+      case 'salary_desc': return parseSalary(b.salary) - parseSalary(a.salary);
+      case 'title_asc': return (a.title||'').localeCompare(b.title||'');
+      default: return (b.match_score||0) - (a.match_score||0);
+    }
+  });
+}
+
+function parseSalary(s) {
+  if (!s) return 0;
+  const m = String(s).match(/[\d,]+/);
+  return m ? parseInt(m[0].replace(/,/g,'')) : 0;
+}
+
+function buildCard(j) {
+  const status = getStatus(j.link);
+  const icon = status==='applied'?'✓':status==='skip'?'✕':'';
+  const badgeClass = {remote:'badge-remote',hybrid:'badge-hybrid',local:'badge-local'}[j.location_type]||'badge-platform';
+  const locationLabel = {remote:'Remote',hybrid:'Hybrid',local:'Local'}[j.location_type]||j.location_type||'';
+  const salaryBadge = j.salary ? '<span class="badge badge-salary">'+j.salary+'</span>' : '';
+  const postedDate = j.discovered ? formatRelativeDate(j.discovered) : (j.posted||'');
+  const postedStr = postedDate ? '<span class="posted">'+postedDate+'</span>' : '';
+
+  // Match score
+  const ms = j.match_score||0;
+  let matchClass = 'match-low';
+  if (ms >= 85) matchClass = 'match-high';
+  else if (ms >= 60) matchClass = 'match-mid';
+  const matchHtml = ms ? '<span class="match-badge '+matchClass+'">' + ms + '%</span>' : '';
+
+  // Warnings & flags
+  const warnHtml = j.warning ? '<span class="tip-icon">⚠️<span class="tip-tooltip">'+j.warning+'</span></span> ' : '';
+  const topHtml = j.top_pick ? '<span class="tip-icon">💎<span class="tip-tooltip">Top pick</span></span> ' : '';
+  const easyHtml = j.easy_apply ? '<span class="tip-icon">⚡<span class="tip-tooltip">Easy Apply</span></span> ' : '';
+  const newHtml = j.flagged ? '' : (new Date(j.discovered||0).getTime() > Date.now()-86400000 ? '<span class="badge badge-new">New</span>' : '');
+  const flaggedClass = j.flagged ? ' flagged' : '';
+  const skipIcon = status==='skip'?'↩':'✕';
+  const skipTitle = status==='skip'?'Undo skip':'Skip';
+
+  return '<div class="card '+status+flaggedClass+'" id="card-'+j.id+'">'
+    +'<div class="card-top">'
+    +'<button class="status-btn" onclick="cycleStatus(\''+j.id+'\')" title="Toggle applied/pending">'+icon+'</button>'
+    +'<div class="card-title">'
+    +'<h3>'+easyHtml+warnHtml+topHtml+(j.title||'')+matchHtml+'</h3>'
+    +'<div class="company">'+ (j.company||'')+'</div>'
+    +'</div>'
+    +'<button class="skip-btn" onclick="skipJob(\''+j.id+'\')" title="'+skipTitle+'">'+skipIcon+'</button>'
+    +'</div>'
+    +'<div class="badges">'
+    +'<span class="badge '+badgeClass+'">'+locationLabel+' · '+(j.location||'')+'</span>'
+    +'<span class="badge badge-platform">'+(j.platform||'')+'</span>'
+    +salaryBadge
+    +newHtml
+    +'</div>'
+    +'<div class="tags">'+(j.tags||[]).map(function(t){return '<span class="tag">'+t+'</span>'}).join('')+'</div>'
+    +(j.description_snippet ? '<div style="font-size:11px;color:var(--muted);line-height:1.4;overflow:hidden;max-height:32px">'+(j.description_snippet||'').slice(0,180)+'</div>' : '')
+    +'<div class="card-footer">'
+    +postedStr
+    +'<div class="footer-btns">'
+    +'<button class="btn-sm" onclick="generateAssist(\''+j.id+'\')" style="font-size:11px">⚡ Assist</button>'
+    +'<a class="view-btn" href="'+(j.link||'#')+'" target="_blank" rel="noopener">View Job →</a>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+function render() {
+  const q = document.getElementById('search') ? document.getElementById('search').value.toLowerCase() : '';
+
+  // Stats
+  const applied = JOBS.filter(function(j){return getStatus(j.link)==='applied'}).length;
+  const skip = JOBS.filter(function(j){return getStatus(j.link)==='skip'}).length;
+  const pending = JOBS.length - applied - skip;
+  const newCount = JOBS.filter(function(j){return new Date(j.discovered||0).getTime() > Date.now()-86400000}).length;
+
+  document.getElementById('stat-total').textContent = JOBS.length;
+  document.getElementById('stat-applied').textContent = applied;
+  document.getElementById('stat-skip').textContent = skip;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-new').textContent = newCount;
+
+  // Tab counts
+  document.getElementById('tc-all').textContent = JOBS.length;
+  document.getElementById('tc-local').textContent = JOBS.filter(function(j){return j.location_type==='local'}).length;
+  document.getElementById('tc-hybrid').textContent = JOBS.filter(function(j){return j.location_type==='hybrid'}).length;
+  document.getElementById('tc-remote').textContent = JOBS.filter(function(j){return j.location_type==='remote'}).length;
+
+  // Show button labels
+  const appBtn = document.getElementById('show-applied');
+  if (appBtn) appBtn.textContent = 'Applied (' + applied + ')';
+  const skipBtn = document.getElementById('show-skipped');
+  if (skipBtn) skipBtn.textContent = 'Skipped (' + skip + ')';
+
+  // Filter & sort
+  let pendingJobs = JOBS.filter(function(j){return getStatus(j.link)==='pending'}).filter(function(j){return filterJobs(j,q)});
+  pendingJobs = sortJobs(pendingJobs);
+
+  let appliedJobs = showApplied
+    ? sortJobs(JOBS.filter(function(j){return getStatus(j.link)==='applied'}).filter(function(j){return filterJobs(j,q)}))
+    : [];
+
+  let skippedJobs = showSkipped
+    ? sortJobs(JOBS.filter(function(j){return getStatus(j.link)==='skip'}).filter(function(j){return filterJobs(j,q)}))
+    : [];
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const totalVisible = pendingJobs.length + appliedJobs.length + skippedJobs.length;
+
+  if (!totalVisible) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let html = pendingJobs.map(buildCard).join('');
+
+  if (appliedJobs.length) {
+    html += '<div class="skipped-divider"><span>Applied (' + appliedJobs.length + ')</span></div>';
+    html += appliedJobs.map(buildCard).join('');
+  }
+
+  if (skippedJobs.length) {
+    html += '<div class="skipped-divider"><span>Skipped (' + skippedJobs.length + ')</span></div>';
+    html += skippedJobs.map(buildCard).join('');
+  }
+
+  grid.innerHTML = html;
+}
+
+// ── Assist ──
+async function generateAssist(id) {
+  const j = JOBS.find(function(x){return x.id===id});
+  if (!j) return;
+  if (!SETTINGS.apikey) { toast('Configure an API key in Settings first', 'error'); return; }
+  if (!PROFILE) { toast('Create a profile first', 'error'); return; }
+
+  toast('Generating application tips...', 'info');
+  try {
+    const body = {
+      messages: [
+        { role:'system', content:'You are a job application assistant. Given a job listing and the user profile, generate helpful notes: 1) Key points to highlight in a cover letter, 2) Skills from the job to emphasize, 3) Potential interview questions. Be concise but specific. Use bullet points.' },
+        { role:'user', content:'Job: ' + JSON.stringify({title:j.title,company:j.company,description:j.description_snippet||'',tags:j.tags})
+          + '\nProfile: ' + JSON.stringify({skills:(PROFILE.skills||[]).map(function(s){return s.name}),experience:PROFILE.experience}) }
+      ]
+    };
+    const resp = await callLLM(body, { noStream:true });
+    const text = resp.choices[0].message.content;
+    toast('Assist notes generated! Check console or click to copy.', 'info');
+    // Show in a prompt so user can copy
+    const copy = confirm('Assist notes:\n\n' + text.slice(0,1500) + '\n\n---\n\nCopy to clipboard?');
+    if (copy) navigator.clipboard.writeText(text).then(function(){toast('Copied!','success')});
+  } catch(e) {
+    toast('Failed: ' + e.message, 'error');
+  }
+}
+
+// ── Tabs ──
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    STATE.filters.activeTab = currentFilter;
+    saveState(STATE);
+    render();
+  });
+});
+
+// ── Progress update ──
+function updateProgress(pct, label, steps) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+  const stepsDiv = document.getElementById('progress-steps');
+  stepsDiv.innerHTML = (steps||[]).map(function(s){
+    return '<span class="progress-step' + (s.state?' ' + s.state:'') + '">' + (s.state==='done'?'✓ ':'') + s.name + '</span>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  IMPORT / EXPORT
+// ═══════════════════════════════════════════════
+
+function exportData() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    profile: PROFILE,
+    preferences: PREFS,
+    platforms: PLATFORMS,
+    jobs: JOBS,
+    statuses: STATUSES,
+    state: STATE
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'jobfinder_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported!', 'success');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.profile) { PROFILE = data.profile; saveProfile(PROFILE); }
+        if (data.preferences) { PREFS = data.preferences; savePreferencesToLS(PREFS); }
+        if (data.platforms) { PLATFORMS = data.platforms; savePlatforms(PLATFORMS); }
+        if (data.jobs) { JOBS = data.jobs; saveJobs(JOBS); }
+        if (data.statuses) { STATUSES = data.statuses; saveStatuses(); }
+        if (data.state) { STATE = data.state; saveState(STATE); currentFilter = STATE.filters.activeTab||'all'; }
+        initUI();
+        render();
+        toast('Data imported! ' + (JOBS.length||0) + ' jobs loaded.', 'success');
+      } catch(err) { toast('Invalid backup file: ' + err.message, 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+
+function initUI() {
+  // Profile
+  if (PROFILE) {
+    document.getElementById('profile-dot').className = 'badge-dot done';
+    renderProfilePreview();
+  } else {
+    document.getElementById('profile-dot').className = 'badge-dot pending';
+  }
+
+  // Preferences
+  if ((PREFS.roles||[]).length || PREFS.location) {
+    renderPrefSummary();
+  }
+
+  // Platforms
+  renderPlatforms();
+
+  // Buttons
+  updateResearchEstimate();
+
+  // Search input
+  const searchInput = document.getElementById('search');
+  if (searchInput) searchInput.addEventListener('input', debounce(render, 200));
+
+  // Load state
+  if (STATE.filters) {
+    currentFilter = STATE.filters.activeTab || 'all';
+    // Restore tab UI
+    document.querySelectorAll('.tab').forEach(function(t){
+      t.classList.toggle('active', t.dataset.filter===currentFilter);
+    });
+  }
+}
+
+initUI();
+render();
+</script>
+</body>
+</html>
